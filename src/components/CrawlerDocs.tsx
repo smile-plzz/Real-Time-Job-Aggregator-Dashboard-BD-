@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { BookOpen, ShieldCheck, HelpCircle, FileCode, CheckCircle2, AlertCircle, Sparkles, Zap, Cpu, Terminal } from 'lucide-react';
+import { BookOpen, ShieldCheck, HelpCircle, FileCode, CheckCircle2, AlertCircle, Sparkles, Zap, Cpu, Terminal, Layers } from 'lucide-react';
 
 export default function CrawlerDocs() {
   return (
@@ -89,6 +89,38 @@ if (t.includes('wordpress') || t.includes('shopify'))
   return 'frontend';`}
           </pre>
         </div>
+      </div>
+
+      {/* Dual Directory Merging Block */}
+      <div className="bg-gradient-to-r from-indigo-950/20 via-[#0D1117] to-violet-950/20 border border-indigo-500/15 p-6 sm:p-8 rounded-2xl space-y-4">
+        <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <Layers className="text-indigo-400 w-5 h-5 animate-pulse" />
+          Dual-Directory Synchronization Engine
+        </h3>
+        <p className="text-xs text-slate-400 leading-relaxed max-w-4xl">
+          To provide the most complete representation of Bangladesh's software development landscape, our system live-fetches, 
+          normalizes, and merges two dominant developer directories on the fly:
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-[#070A0F] border border-[#161B22] p-4 rounded-xl space-y-2">
+            <h4 className="text-xs font-bold text-indigo-400">1. Just Apply Directory</h4>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Maintained by <code>badhon495</code>. This contains high-integrity recruitment email addresses (HR/recruiter), 
+              office directions, direct website links, and primary career portals for over 150+ Bangladeshi IT companies.
+            </p>
+          </div>
+          <div className="bg-[#070A0F] border border-[#161B22] p-4 rounded-xl space-y-2">
+            <h4 className="text-xs font-bold text-violet-400">2. MBSTUPC Directory</h4>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              A comprehensive open-source database of tech companies in Bangladesh. It contributes critical metadata 
+              including team sizes (engineer counts), social profile links (Facebook, Twitter), and direct list of technology stacks.
+            </p>
+          </div>
+        </div>
+        <p className="text-[11px] text-slate-500 italic leading-relaxed">
+          * How the merge works: The server normalizes names (e.g. ignoring case, punctuation, and generic suffixes), maps keys, 
+          enriches Just Apply contacts with MBSTUPC team size/tech attributes, and appends unique listings only present in one source.
+        </p>
       </div>
 
       {/* Visual Pipeline Section */}

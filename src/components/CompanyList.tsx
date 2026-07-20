@@ -162,6 +162,16 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
           <p className="text-xs text-slate-400 mt-0.5">
             Active directory of {companies.length} Bangladeshi IT companies. Trigger direct heuristic crawlers on websites to find live software roles.
           </p>
+          <div className="flex flex-wrap items-center gap-2 mt-2 text-[10px] sm:text-xs">
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/10 border border-indigo-500/20 text-indigo-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
+              <strong>Just Apply</strong> (Contact Emails)
+            </span>
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-500/20 text-violet-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse"></span>
+              <strong>MBSTUPC</strong> (Tech Stacks & Team Sizes)
+            </span>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2.5">

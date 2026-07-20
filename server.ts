@@ -273,66 +273,74 @@ async function loadCompaniesFromMBSTUPC() {
     if (!response.ok) throw new Error('Failed to fetch README.adoc');
     const adocText = await response.text();
     
-    const lines = adocText.split('\n');
-    const parsedCompanies: any[] = [];
+    const lines = adocText.split('\n').map(l => l.trim());
+    const cells: string[] = [];
+    let inTable = false;
     
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      
-      // Look for rows that start with | but aren't tables markers or section titles
-      if (line.startsWith('|') && !line.startsWith('|===') && !line.includes('Company Name') && !line.includes('Web presence')) {
-        // Split by '|' and skip the first element (which is empty from the leading pipe)
-        const parts = line.split('|').slice(1).map(p => p.trim());
-        
-        if (parts.length >= 4) {
-          const name = parts[0];
-          const location = parts[1];
-          const technologiesRaw = parts[2];
-          const webPresence = parts[3];
-          const size = parts[4] || 'Please update';
-          
-          let website = '';
-          let linkedin = '';
-          let facebook = '';
-          let twitter = '';
-          
-          // Regex to parse Website url
-          const webMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Website\]/i);
-          if (webMatch) {
-            website = webMatch[1];
-          } else {
-            const firstUrl = webPresence.match(/https?:\/\/[^\s\[\]]+/);
-            if (firstUrl) {
-              website = firstUrl[0];
-            }
-          }
-          
-          const liMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[LinkedIn\]/i);
-          if (liMatch) linkedin = liMatch[1];
-          
-          const fbMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Facebook\]/i);
-          if (fbMatch) facebook = fbMatch[1];
-          
-          const twMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Twitter\]/i);
-          if (twMatch) twitter = twMatch[1];
-          
-          // Clean technologies to skills
-          const skillsList = technologiesRaw
-            ? technologiesRaw.split(',').map(s => s.trim()).filter(Boolean)
-            : [];
-            
-          parsedCompanies.push({
-            name,
-            location,
-            skillsList,
-            website,
-            career: website ? `${website.endsWith('/') ? website : website + '/'}careers` : '',
-            linkedin,
-            facebook,
-            twitter,
-            size
-          });
+      const line = lines[i];
+      if (line === '|===') {
+        inTable = !inTable;
+        continue;
+      }
+      if (inTable && line.startsWith('|')) {
+        // Ignore table headers
+        if (line.includes('Company Name') || line.includes('Office location') || line.includes('Web presence')) {
+          continue;
         }
+        cells.push(line.substring(1).trim());
+      }
+    }
+    
+    const parsedCompanies: any[] = [];
+    for (let i = 0; i < cells.length; i += 5) {
+      if (i + 4 < cells.length) {
+        const name = cells[i];
+        const location = cells[i+1];
+        const technologiesRaw = cells[i+2];
+        const webPresence = cells[i+3];
+        const size = cells[i+4] || 'Please update';
+        
+        let website = '';
+        let linkedin = '';
+        let facebook = '';
+        let twitter = '';
+        
+        // Parse urls from webPresence cell
+        const webMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Website\]/i);
+        if (webMatch) {
+          website = webMatch[1];
+        } else {
+          const firstUrl = webPresence.match(/https?:\/\/[^\s\[\]]+/);
+          if (firstUrl) {
+            website = firstUrl[0];
+          }
+        }
+        
+        const liMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[LinkedIn\]/i);
+        if (liMatch) linkedin = liMatch[1];
+        
+        const fbMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Facebook\]/i);
+        if (fbMatch) facebook = fbMatch[1];
+        
+        const twMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Twitter\]/i);
+        if (twMatch) twitter = twMatch[1];
+        
+        const skillsList = technologiesRaw
+          ? technologiesRaw.split(',').map(s => s.trim()).filter(Boolean)
+          : [];
+          
+        parsedCompanies.push({
+          name,
+          location,
+          skillsList,
+          website,
+          career: website ? `${website.endsWith('/') ? website : website + '/'}careers` : '',
+          linkedin,
+          facebook,
+          twitter,
+          size
+        });
       }
     }
     
