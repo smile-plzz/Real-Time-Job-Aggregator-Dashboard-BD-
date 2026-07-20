@@ -92,7 +92,7 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
           <h3 className="text-3xl font-semibold tracking-tight text-slate-100 mt-1">{stats.totalCompanies}</h3>
           <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
             <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-            From Just Apply Directory
+            From Merged Tech Directories
           </p>
         </div>
         <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/10">

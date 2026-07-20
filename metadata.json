@@ -1,6 +1,8 @@
 {
-  "name": "Real-Time Job Aggregator Dashboard",
-  "description": "Scrapes and aggregates career-page job listings in real time from leading tech companies, structuring them into a sleek, searchable, and filterable directory dashboard.",
+  "name": "TechHub BD Intelligence",
+  "description": "Real-time career aggregator and geospatial market analytics dashboard for Bangladesh technology and software engineering companies.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

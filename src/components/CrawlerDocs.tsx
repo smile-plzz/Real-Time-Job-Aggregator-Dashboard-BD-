@@ -123,6 +123,33 @@ if (t.includes('wordpress') || t.includes('shopify'))
         </p>
       </div>
 
+      {/* Analytics & Geospatial Engine Block */}
+      <div className="bg-gradient-to-r from-emerald-950/20 via-[#0D1117] to-teal-950/20 border border-emerald-500/15 p-6 sm:p-8 rounded-2xl space-y-4">
+        <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <Sparkles className="text-emerald-400 w-5 h-5 animate-pulse" />
+          Analytics &amp; Geospatial Engine
+        </h3>
+        <p className="text-xs text-slate-400 leading-relaxed max-w-4xl">
+          Beyond raw job aggregation, the engine processes location data and job metadata to generate rich market insights:
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-[#070A0F] border border-[#161B22] p-4 rounded-xl space-y-2">
+            <h4 className="text-xs font-bold text-emerald-400">Geospatial Distribution Map</h4>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Using Leaflet and geocoding heuristics, the system places tech companies on an interactive map of Dhaka, 
+              allowing users to visualize tech hubs (e.g., Banani, Gulshan, Dhanmondi) and discover local opportunities.
+            </p>
+          </div>
+          <div className="bg-[#070A0F] border border-[#161B22] p-4 rounded-xl space-y-2">
+            <h4 className="text-xs font-bold text-teal-400">Telemetry &amp; Salary Estimation</h4>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              The analytics dashboard parses job metadata to estimate salary brackets (BDT), work modes (Remote/Hybrid/On-site), 
+              and tracks the demand for specific technology stacks across all indexed roles in real-time.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Visual Pipeline Section */}
       <div className="bg-[#0D1117] border border-[#161B22] p-6 sm:p-8 rounded-2xl space-y-6">
         <div className="space-y-1.5">

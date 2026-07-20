@@ -236,23 +236,23 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0C10] text-[#E2E8F0] flex flex-col justify-between" id="applet-container">
+    <div className="min-h-screen text-[#E2E8F0] flex flex-col justify-between relative" id="applet-container">
       {/* Top Header Navigation Panel */}
-      <header className="bg-[#0D1117]/80 backdrop-blur-md text-white border-b border-[#161B22] sticky top-0 z-40 py-5 px-6 shrink-0" id="main-header">
+      <header className="bg-[#0A0C10]/95 backdrop-blur-xl text-white border-b border-[#161B22] sticky top-0 z-40 py-5 px-6 shrink-0 shadow-sm" id="main-header">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-inner">
-              <Cpu className="w-6 h-6 animate-pulse" />
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+              <Cpu className="w-5 h-5" />
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-slate-100">
-                Real-Time Job Aggregator Dashboard
-                <span className="text-[10px] uppercase tracking-wider font-mono bg-indigo-500/20 text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-500/10 font-bold">
-                  Heuristic Engine
+                TechHub BD Intelligence
+                <span className="text-[9px] uppercase tracking-wider font-mono bg-indigo-500/10 text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-500/20 font-semibold">
+                  Live Engine
                 </span>
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Dynamic Career Scraper for Bangladesh IT Company Directories
+              <p className="text-xs text-slate-400 mt-0.5 font-medium">
+                Real-Time Career Aggregator & Company Directory
               </p>
             </div>
           </div>
@@ -260,73 +260,73 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => fetchAllData()}
-              className="p-2.5 bg-[#161B22] hover:bg-[#1f2631] text-slate-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-[#30363d]"
+              className="px-3.5 py-2.5 bg-[#0D1117] hover:bg-[#161B22] text-slate-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-[#161B22] hover:border-[#30363d] shadow-sm"
               title="Refresh dashboard"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh Feed
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Sync Data
             </button>
             
             <button
               onClick={handleResetCache}
               disabled={resetting}
-              className="px-3.5 py-2.5 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-600 hover:text-white text-rose-400 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3.5 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               title="Wipe scraped jobs and reset to seed listings"
             >
-              <Trash2 className="w-4 h-4" />
-              Reset Cache
+              <Trash2 className="w-3.5 h-3.5" />
+              {resetting ? 'Resetting...' : 'Reset System'}
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Container Core Layout */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-1 w-full" id="main-content">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full" id="main-content">
         {/* Tab Selection Switcher */}
-        <div className="flex border-b border-[#161B22] mb-6 overflow-x-auto whitespace-nowrap scrollbar-none" id="dashboard-tab-navigation">
+        <div className="flex border-b border-[#161B22] mb-8 overflow-x-auto whitespace-nowrap scrollbar-none gap-2" id="dashboard-tab-navigation">
           <button
             onClick={() => setActiveTab('jobs')}
-            className={`px-6 py-3.5 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'jobs'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
             }`}
           >
-            <Layers className="w-4 h-4 text-indigo-400" />
-            Jobs Board
+            <Layers className={`w-4 h-4 ${activeTab === 'jobs' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            Active Jobs
           </button>
           <button
             onClick={() => setActiveTab('directory')}
-            className={`px-6 py-3.5 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'directory'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
             }`}
           >
-            <Building className="w-4 h-4 text-indigo-400" />
-            Company Directory &amp; Directory Info
+            <Building className={`w-4 h-4 ${activeTab === 'directory' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            Tech Directory
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`px-6 py-3.5 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'analytics'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
             }`}
           >
-            <BarChart3 className="w-4 h-4 text-indigo-400" />
-            Market Analytics Dashboard
+            <BarChart3 className={`w-4 h-4 ${activeTab === 'analytics' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            Market Analytics
           </button>
           <button
             onClick={() => setActiveTab('docs')}
-            className={`px-6 py-3.5 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'docs'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5'
-                : 'border-transparent text-slate-400 hover:text-white'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
             }`}
           >
-            <BookOpen className="w-4 h-4 text-indigo-400" />
-            System Docs &amp; Crawler Guide
+            <BookOpen className={`w-4 h-4 ${activeTab === 'docs' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            System Architecture
           </button>
         </div>
 
@@ -427,14 +427,16 @@ export default function App() {
       </main>
 
       {/* Footer Navigation Credits Panel */}
-      <footer className="bg-[#0D1117] border-t border-[#161B22] py-6 text-center text-xs text-slate-500" id="main-footer">
+      <footer className="bg-[#0A0C10] border-t border-[#161B22] py-8 mt-12 text-center text-xs text-slate-500 relative z-10" id="main-footer">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="font-medium text-slate-400">
-            Real-Time Job Aggregator &mdash; High-Fidelity Heuristic Crawler Engine &amp; Just Apply Directory
+            TechHub BD &mdash; High-Fidelity Heuristic Crawler Engine & Directory
           </p>
-          <p className="font-mono text-[10px] text-slate-500">
-            Bangladesh IT Directory Contact List
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="font-mono text-[10px] text-slate-500">
+              Aggregating from MBSTUPC & JustApply
+            </p>
+          </div>
         </div>
       </footer>
 
