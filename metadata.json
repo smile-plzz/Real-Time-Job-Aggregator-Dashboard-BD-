@@ -1,0 +1,6 @@
+{
+  "name": "Real-Time Job Aggregator Dashboard",
+  "description": "Scrapes and aggregates career-page job listings in real time from leading tech companies, structuring them into a sleek, searchable, and filterable directory dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
