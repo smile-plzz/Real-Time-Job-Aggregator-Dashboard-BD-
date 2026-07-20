@@ -1559,7 +1559,8 @@ async function crawlCompanyCareerHub(initialUrl: string, companyName: string, he
 }
 
 // REST API Middleware
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // API: Get List of Companies
 app.get('/api/companies', (req, res) => {
@@ -1769,13 +1770,29 @@ app.post('/api/scrape', async (req, res) => {
 
 // API: Bulk Scrape Route (Sequentially/Concurrently scrapes selected companies)
 app.post('/api/scrape-bulk', async (req, res) => {
-  const { companiesToScrape, heuristic } = req.body; 
+  const { companiesToScrape: rawCompanies, heuristic } = req.body; 
   
-  if (!Array.isArray(companiesToScrape) || companiesToScrape.length === 0) {
+  if (!Array.isArray(rawCompanies) || rawCompanies.length === 0) {
     return res.status(400).json({ error: 'Array of companies is required' });
   }
 
-  console.log(`Starting bulk scrape operation (Heuristic=${!!heuristic}) for ${companiesToScrape.length} companies...`);
+  // Resolve raw input items to server-side company objects safely
+  const companiesToScrape = rawCompanies.map(item => {
+    if (!item) return null;
+    if (typeof item === 'string') {
+      return companiesCache.find(cached => cached.id === item || cached.name === item);
+    }
+    if (typeof item === 'object') {
+      return companiesCache.find(cached => cached.id === item.id || cached.name === item.name) || item;
+    }
+    return null;
+  }).filter(Boolean);
+
+  if (companiesToScrape.length === 0) {
+    return res.status(400).json({ error: 'No valid companies matching cache targets found' });
+  }
+
+  console.log(`Starting bulk scrape operation (Heuristic=${!!heuristic}) for ${companiesToScrape.length} resolved companies...`);
   
   res.json({ message: 'Bulk scraping initiated', count: companiesToScrape.length });
 

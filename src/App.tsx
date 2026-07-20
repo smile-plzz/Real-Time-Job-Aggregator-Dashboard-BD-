@@ -38,7 +38,23 @@ export default function App() {
   const [resetting, setResetting] = useState(false);
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  // Helper for resilient server communication with exponential backoff retry
+  const fetchWithRetry = async (url: string, options?: RequestInit, retries = 2, delay = 1000): Promise<Response> => {
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok && retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchWithRetry(url, options, retries - 1, delay * 2);
+      }
+      return res;
+    } catch (err) {
+      if (retries > 0) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return fetchWithRetry(url, options, retries - 1, delay * 2);
+      }
+      throw err;
+    }
+  };
 
   // Trigger temporary toast notification
   const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -51,9 +67,9 @@ export default function App() {
     if (!silent) setLoading(true);
     try {
       const [compRes, jobsRes, statsRes] = await Promise.all([
-        fetch('/api/companies'),
-        fetch('/api/jobs'),
-        fetch('/api/stats')
+        fetchWithRetry('/api/companies'),
+        fetchWithRetry('/api/jobs'),
+        fetchWithRetry('/api/stats')
       ]);
 
       if (compRes.ok && jobsRes.ok && statsRes.ok) {
@@ -71,10 +87,15 @@ export default function App() {
           setBulkScraping(false);
           showNotification('Bulk scanning operation completed!', 'success');
         }
+      } else {
+        throw new Error('Server returned non-ok response statuses');
       }
     } catch (err) {
       console.error('Error fetching dashboard records:', err);
-      showNotification('Failed to retrieve latest data from server', 'error');
+      // Only display the error banner if the load was active and expected (non-silent)
+      if (!silent) {
+        showNotification('Failed to retrieve latest data from server. Please refresh.', 'error');
+      }
     } finally {
       if (!silent) setLoading(false);
     }
@@ -82,30 +103,25 @@ export default function App() {
 
   useEffect(() => {
     fetchAllData();
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
   }, []);
 
-  // Poll server for updates if anything is in a 'scraping' state
+  // Poll server for updates if anything is in a 'scraping' state (fully self-cleaning)
   useEffect(() => {
     const isAnyScraping = companies.some(c => c.scrapeStatus === 'scraping');
     
+    let intervalId: NodeJS.Timeout | null = null;
     if (isAnyScraping) {
-      if (!pollingRef.current) {
-        console.log('Active scrape running, starting polling...');
-        pollingRef.current = setInterval(() => {
-          fetchAllData(true);
-        }, 4000);
-      }
-    } else {
-      if (pollingRef.current) {
-        console.log('No active scrape running, stopping polling...');
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      intervalId = setInterval(() => {
+        fetchAllData(true);
+      }, 4000);
     }
-  }, [companies]);
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [companies, bulkScraping]);
 
   // Handle single company scrape triggers
   const handleScrapeCompany = async (companyName: string, careerUrl: string | null, mode: 'direct' | 'search') => {
@@ -164,7 +180,7 @@ export default function App() {
       const response = await fetch('/api/scrape-bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ companiesToScrape: selectedCompanies, heuristic })
+        body: JSON.stringify({ companiesToScrape: selectedCompanies.map(sc => sc.name), heuristic })
       });
 
       if (!response.ok) {
