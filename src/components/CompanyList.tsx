@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Building2, ExternalLink, Globe, Linkedin, Mail, Play, AlertCircle, CheckCircle2, RefreshCw, Cpu, SlidersHorizontal, ArrowUpDown, MapPin, Sparkles, Layers } from 'lucide-react';
+import { Search, Building2, ExternalLink, Globe, Linkedin, Mail, Play, AlertCircle, CheckCircle2, RefreshCw, Cpu, SlidersHorizontal, ArrowUpDown, MapPin, Sparkles, Layers, Users } from 'lucide-react';
 import { Company } from '../types';
 
 interface CompanyListProps {
@@ -20,9 +20,16 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
   const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [sizeFilter, setSizeFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('name-asc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState<number | 'all'>(8);
+
+  const uniqueSizes = Array.from(new Set(
+    companies
+      .map(c => c.size)
+      .filter((size): size is string => Boolean(size && size !== 'Please update'))
+  )).sort();
 
   // Directory-specific counts
   const totalListed = companies.length;
@@ -78,6 +85,11 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
     return true;
   };
 
+  const matchesSize = (company: Company) => {
+    if (sizeFilter === 'all') return true;
+    return company.size === sizeFilter;
+  };
+
   // Filter companies
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = 
@@ -93,7 +105,7 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
     else if (statusFilter === 'failed') matchesStatus = company.scrapeStatus === 'failed';
     else if (statusFilter === 'with_jobs') matchesStatus = company.jobCount && company.jobCount > 0;
     
-    return matchesSearch && matchesStatus && matchesLocation(company) && matchesChannel(company);
+    return matchesSearch && matchesStatus && matchesLocation(company) && matchesChannel(company) && matchesSize(company);
   });
 
   // Sort companies
@@ -250,9 +262,9 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6" id="directory-filters">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 mb-6" id="directory-filters">
         {/* Search */}
-        <div className="relative sm:col-span-2 lg:col-span-1">
+        <div className="relative sm:col-span-2 lg:col-span-2">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
           <input
             type="text"
@@ -323,6 +335,23 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
             <option value="website">Has Website Link</option>
             <option value="email">Has HR Email</option>
             <option value="linkedin">Has LinkedIn Profile</option>
+          </select>
+        </div>
+
+        {/* Size Filter */}
+        <div>
+          <select
+            value={sizeFilter}
+            onChange={(e) => {
+              setSizeFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="w-full px-3 py-2.5 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs sm:text-sm text-slate-300 focus:outline-hidden focus:border-indigo-500/50 focus:bg-[#161B22]/30 transition-all cursor-pointer"
+          >
+            <option value="all">All Company Sizes</option>
+            {uniqueSizes.map(size => (
+              <option key={size} value={size}>{size} Team</option>
+            ))}
           </select>
         </div>
 
@@ -435,6 +464,32 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
                           >
                             <Mail className="w-4 h-4" />
                           </a>
+                        ) : null}
+
+                        {company.contact ? (
+                          <div className="flex items-center gap-1 relative group">
+                            <Users className="w-4 h-4 text-slate-500 hover:text-indigo-400 cursor-pointer transition-colors" />
+                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-48 bg-[#161B22] border border-[#30363d] rounded-lg shadow-xl p-2 z-10">
+                              <div className="text-[10px] font-bold text-slate-300 mb-1 border-b border-[#30363d] pb-1">HR / Recruiter Contacts</div>
+                              <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+                                {company.contact.split(';').map((contact, idx) => {
+                                  const contactUrl = contact.trim();
+                                  if (!contactUrl) return null;
+                                  return (
+                                    <a 
+                                      key={idx}
+                                      href={contactUrl.startsWith('http') ? contactUrl : `https://${contactUrl}`} 
+                                      target="_blank" 
+                                      rel="noopener noreferrer"
+                                      className="text-[10px] text-indigo-400 hover:text-indigo-300 truncate"
+                                    >
+                                      {contactUrl.replace(/https?:\/\/(www\.)?linkedin\.com\/in\//i, '@')}
+                                    </a>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </div>
                         ) : null}
 
                         {company.linkedin ? (
