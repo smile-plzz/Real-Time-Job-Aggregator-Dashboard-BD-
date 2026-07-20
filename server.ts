@@ -261,6 +261,85 @@ const SEED_JOBS = [
 // Initialize with seed jobs
 jobsCache = [...SEED_JOBS];
 
+// Helper to scrape/fetch MBSTUPC Tech Companies in Bangladesh list from GitHub
+async function loadCompaniesFromMBSTUPC() {
+  try {
+    console.log('Fetching live company directory from MBSTUPC (GitHub)...');
+    const response = await fetch('https://raw.githubusercontent.com/MBSTUPC/tech-companies-in-bangladesh/master/README.adoc');
+    if (!response.ok) throw new Error('Failed to fetch README.adoc');
+    const adocText = await response.text();
+    
+    const lines = adocText.split('\n');
+    const parsedCompanies: any[] = [];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Look for rows that start with | but aren't tables markers or section titles
+      if (line.startsWith('|') && !line.startsWith('|===') && !line.includes('Company Name') && !line.includes('Web presence')) {
+        // Split by '|' and skip the first element (which is empty from the leading pipe)
+        const parts = line.split('|').slice(1).map(p => p.trim());
+        
+        if (parts.length >= 4) {
+          const name = parts[0];
+          const location = parts[1];
+          const technologiesRaw = parts[2];
+          const webPresence = parts[3];
+          const size = parts[4] || 'Please update';
+          
+          let website = '';
+          let linkedin = '';
+          let facebook = '';
+          let twitter = '';
+          
+          // Regex to parse Website url
+          const webMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Website\]/i);
+          if (webMatch) {
+            website = webMatch[1];
+          } else {
+            const firstUrl = webPresence.match(/https?:\/\/[^\s\[\]]+/);
+            if (firstUrl) {
+              website = firstUrl[0];
+            }
+          }
+          
+          const liMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[LinkedIn\]/i);
+          if (liMatch) linkedin = liMatch[1];
+          
+          const fbMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Facebook\]/i);
+          if (fbMatch) facebook = fbMatch[1];
+          
+          const twMatch = webPresence.match(/(https?:\/\/[^\s\[\]]+)\[Twitter\]/i);
+          if (twMatch) twitter = twMatch[1];
+          
+          // Clean technologies to skills
+          const skillsList = technologiesRaw
+            ? technologiesRaw.split(',').map(s => s.trim()).filter(Boolean)
+            : [];
+            
+          parsedCompanies.push({
+            name,
+            location,
+            skillsList,
+            website,
+            career: website ? `${website.endsWith('/') ? website : website + '/'}careers` : '',
+            linkedin,
+            facebook,
+            twitter,
+            size
+          });
+        }
+      }
+    }
+    
+    console.log(`Parsed ${parsedCompanies.length} companies successfully from MBSTUPC directory.`);
+    return parsedCompanies;
+  } catch (error) {
+    console.error('Error fetching/parsing MBSTUPC company list:', error);
+    return [];
+  }
+}
+
 // Helper to scrape/fetch Just Apply company list at start
 async function loadCompaniesFromDirectory() {
   try {
@@ -269,6 +348,7 @@ async function loadCompaniesFromDirectory() {
     if (!response.ok) throw new Error('Failed to fetch app.js');
     const jsText = await response.text();
     
+    let justApplyCompanies: any[] = [];
     const startIdx = jsText.indexOf('const companies = [');
     if (startIdx !== -1) {
       const endIdx = jsText.indexOf('];', startIdx);
@@ -281,44 +361,107 @@ async function loadCompaniesFromDirectory() {
         const sandbox = { companies: [] as any[] };
         vm.createContext(sandbox);
         vm.runInContext(arrayStr + "\ncompanies;", sandbox);
-        
-        if (Array.isArray(sandbox.companies) && sandbox.companies.length > 0) {
-          companiesCache = sandbox.companies.map((c, idx) => {
-            let career = c.career || '';
-            
-            // Gracefully patch obsolete, dead, or unresolvable career URLs to active ones
-            if (career.includes('jobs.divineit.net')) {
-              career = 'https://www.divineit.net/career/';
-            } else if (career.includes('people.aamra.com.bd')) {
-              career = 'https://www.aamra.com.bd/';
-            } else if (career.includes('talent.talent-troop.com')) {
-              if (c.name && c.name.toLowerCase().includes('era')) {
-                career = 'https://www.era.com.bd/career';
-              } else {
-                // Strip broken third-party recruit platform URLs and fallback to direct company URL
-                career = c.website ? (c.website.startsWith('http') ? c.website : `https://${c.website}`) : '';
-              }
-            }
-
-            return {
-              id: `company-${idx}`,
-              name: c.name,
-              location: c.location,
-              website: c.website,
-              career: career,
-              email: c.email,
-              linkedin: c.linkedin,
-              contact: c.contact,
-              scrapeStatus: 'idle',
-              jobCount: jobsCache.filter(j => j.companyName === c.name).length
-            };
-          });
-          console.log(`Loaded ${companiesCache.length} companies successfully from Just Apply directory.`);
-          return;
-        }
+        justApplyCompanies = sandbox.companies || [];
       }
     }
-    throw new Error('Could not parse companies from app.js');
+
+    if (justApplyCompanies.length === 0) {
+      justApplyCompanies = [...FALLBACK_COMPANIES];
+    }
+
+    const baseCompanies = justApplyCompanies.map((c, idx) => {
+      let career = c.career || '';
+      
+      // Gracefully patch obsolete, dead, or unresolvable career URLs to active ones
+      if (career.includes('jobs.divineit.net')) {
+        career = 'https://www.divineit.net/career/';
+      } else if (career.includes('people.aamra.com.bd')) {
+        career = 'https://www.aamra.com.bd/';
+      } else if (career.includes('talent.talent-troop.com')) {
+        if (c.name && c.name.toLowerCase().includes('era')) {
+          career = 'https://www.era.com.bd/career';
+        } else {
+          // Strip broken third-party recruit platform URLs and fallback to direct company URL
+          career = c.website ? (c.website.startsWith('http') ? c.website : `https://${c.website}`) : '';
+        }
+      }
+
+      return {
+        id: `company-${idx}`,
+        name: c.name,
+        location: c.location || 'Dhaka, Bangladesh',
+        website: c.website || '',
+        career: career,
+        email: c.email || '',
+        linkedin: c.linkedin || '',
+        contact: c.contact || '',
+        technologies: [] as string[],
+        size: 'Please update',
+        facebook: '',
+        twitter: '',
+        scrapeStatus: 'idle',
+        jobCount: 0
+      };
+    });
+
+    // Fetch and parse MBSTUPC companies
+    const mbstupcCompanies = await loadCompaniesFromMBSTUPC();
+    
+    // Create lookup map based on normalized names
+    const normalizeName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const companyMap = new Map<string, any>();
+    baseCompanies.forEach(bc => {
+      companyMap.set(normalizeName(bc.name), bc);
+    });
+
+    const mergedList = [...baseCompanies];
+    let newCompanyCounter = baseCompanies.length;
+
+    mbstupcCompanies.forEach(mc => {
+      const norm = normalizeName(mc.name);
+      const existing = companyMap.get(norm);
+
+      if (existing) {
+        // Enrich existing
+        if (!existing.website && mc.website) existing.website = mc.website;
+        if (!existing.career && mc.career) existing.career = mc.career;
+        if (!existing.linkedin && mc.linkedin) existing.linkedin = mc.linkedin;
+        if (existing.location === 'Dhaka, Bangladesh' || !existing.location || existing.location === 'Dhaka') {
+          if (mc.location) existing.location = mc.location;
+        }
+        existing.technologies = mc.skillsList;
+        existing.size = mc.size;
+        if (mc.facebook) existing.facebook = mc.facebook;
+        if (mc.twitter) existing.twitter = mc.twitter;
+      } else {
+        // Add new company
+        mergedList.push({
+          id: `company-${newCompanyCounter++}`,
+          name: mc.name,
+          location: mc.location || 'Dhaka, Bangladesh',
+          website: mc.website || '',
+          career: mc.career || (mc.website ? `${mc.website.endsWith('/') ? mc.website : mc.website + '/'}careers` : ''),
+          email: '',
+          linkedin: mc.linkedin || '',
+          contact: '',
+          technologies: mc.skillsList,
+          size: mc.size || 'Please update',
+          facebook: mc.facebook,
+          twitter: mc.twitter,
+          scrapeStatus: 'idle',
+          jobCount: 0
+        });
+      }
+    });
+
+    companiesCache = mergedList;
+    console.log(`Merged Tech Companies directory completed successfully! Registered ${companiesCache.length} unique companies.`);
+    
+    // Initial sync of job counts
+    companiesCache.forEach(c => {
+      c.jobCount = jobsCache.filter(j => j.companyName === c.name).length;
+    });
+
   } catch (error) {
     console.error('Error fetching Just Apply company list. Loading default companies list...', error);
     companiesCache = FALLBACK_COMPANIES.map((c, idx) => ({

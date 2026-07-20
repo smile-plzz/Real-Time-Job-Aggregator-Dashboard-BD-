@@ -12,6 +12,12 @@ export interface Company {
   linkedin: string | null;
   contact: string | null;
   
+  // MBSTUPC additional metadata
+  technologies?: string[];
+  size?: string;
+  facebook?: string;
+  twitter?: string;
+  
   // Frontend/Status tracking
   scrapeStatus?: 'idle' | 'scraping' | 'completed' | 'failed';
   lastScraped?: string;
