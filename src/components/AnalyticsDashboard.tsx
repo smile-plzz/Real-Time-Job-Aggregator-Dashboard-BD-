@@ -26,6 +26,7 @@ import {
   Info,
   Banknote
 } from 'lucide-react';
+import { CompanyMap } from './CompanyMap';
 
 interface AnalyticsDashboardProps {
   companies: Company[];
@@ -33,6 +34,7 @@ interface AnalyticsDashboardProps {
 }
 
 export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboardProps) {
+  const [showMap, setShowMap] = useState<boolean>(false);
   // --- Filter States ---
   const [selectedExperience, setSelectedExperience] = useState<string>('all');
   const [selectedWorkMode, setSelectedWorkMode] = useState<string>('all');
@@ -191,6 +193,34 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
       }))
       .filter(item => item.value > 0);
   }, [filteredJobs]);
+
+  // NEW: Process Company Domain/Industry Classification based on heuristics
+  const companyIndustryStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const classifyDomain = (company: Company) => {
+      const cStr = `${company.name} ${company.technologies?.join(' ')}`.toLowerCase();
+      if (cStr.match(/pay|bank|finance|cash|money|invest|wallet|fintech/i)) return 'FinTech & Finance';
+      if (cStr.match(/shop|store|cart|commerce|daraz|evaly|chaldal|retail|e-commerce/i)) return 'E-Commerce & Retail';
+      if (cStr.match(/edu|learn|school|academy|student/i)) return 'EdTech';
+      if (cStr.match(/health|med|doctor|clinic|hospital/i)) return 'HealthTech';
+      if (cStr.match(/air|travel|trip|fly|tour/i)) return 'Travel & Aviation';
+      if (cStr.match(/food|hungry|restaurant|delivery/i)) return 'Food & Delivery';
+      if (cStr.match(/telco|telecom|mobile|sim|robi|grameenphone|banglalink/i)) return 'Telecommunications';
+      if (cStr.match(/news|media|tv|broadcast/i)) return 'Media & News';
+      if (cStr.match(/tech|soft|it |digital|logic|code|web|app|solution|systems|studio/i)) return 'IT & Software Agency';
+      return 'Enterprise & Miscellaneous';
+    };
+
+    companies.forEach(company => {
+      const domain = classifyDomain(company);
+      counts[domain] = (counts[domain] || 0) + 1;
+    });
+
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 7); // Top 7 domains
+  }, [companies]);
 
   // 4. Process Experience Levels
   const experienceStats = useMemo(() => {
@@ -603,6 +633,28 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
         </p>
       </div>
 
+      {/* Interactive Map Toggle */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#0D1117] border border-[#161B22] rounded-xl p-4 shadow-sm gap-4">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-emerald-400" />
+            Geospatial Intelligence Map
+          </h3>
+          <p className="text-xs text-slate-500 mt-0.5">Explore company distributions and tech clusters across Dhaka.</p>
+        </div>
+        <button 
+          onClick={() => setShowMap(!showMap)}
+          className="whitespace-nowrap px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-500/30 transition-colors flex items-center justify-center"
+        >
+          {showMap ? 'Hide Interactive Map' : 'Load Interactive Map'}
+        </button>
+      </div>
+
+      {/* Interactive Map */}
+      {showMap && (
+        <CompanyMap companies={companies} jobs={filteredJobs} />
+      )}
+
       {/* Dynamic Filter Controls Panel */}
       <div className="bg-[#0D1117] border border-[#161B22] rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm" id="analytics-filter-controls">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#161B22]/60">
@@ -790,7 +842,7 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
       </div>
 
       {/* Visual Chart Bento Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         
         {/* 1. Job Role Categories distribution */}
         <div className="bg-[#0D1117] border border-[#161B22] rounded-2xl p-5 flex flex-col justify-between shadow-xs">
@@ -803,7 +855,6 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
               Breakdown of live roles aggregated across backend, frontend, fullstack, and auxiliary IT paths.
             </p>
           </div>
-
           <div className="h-64 flex items-center justify-center">
             {categoryStats.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -831,12 +882,60 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
               <span className="text-xs text-slate-500">Aggregate job data first to see chart analytics.</span>
             )}
           </div>
-
           {/* Legend */}
           <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 justify-center max-h-16 overflow-y-auto pt-2 border-t border-[#161B22]/60">
             {categoryStats.map((item, index) => (
               <div key={item.name} className="flex items-center gap-1.5 text-[10px] text-slate-400">
                 <div className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                <span>{item.name} ({item.value})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* NEW: Company Domain/Industry Analytics */}
+        <div className="bg-[#0D1117] border border-[#161B22] rounded-2xl p-5 flex flex-col justify-between shadow-xs">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2 mb-1">
+              <Building2 className="w-4 h-4 text-emerald-400" />
+              Company Domain Distribution
+            </h3>
+            <p className="text-[11px] text-slate-500 mb-4">
+              Heuristic classification of companies by industry sector across the ecosystem.
+            </p>
+          </div>
+          <div className="h-64 flex items-center justify-center">
+            {companyIndustryStats.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={companyIndustryStats}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {companyIndustryStats.map((entry, index) => (
+                      <Cell key={`cell-ind-${index}`} fill={SOURCE_COLORS[index % SOURCE_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0A0C10', borderColor: '#161B22', borderRadius: '12px' }}
+                    itemStyle={{ color: '#E2E8F0', fontSize: '11px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <span className="text-xs text-slate-500">Add companies to generate sector analytics.</span>
+            )}
+          </div>
+          {/* Legend */}
+          <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-2 justify-center max-h-16 overflow-y-auto pt-2 border-t border-[#161B22]/60">
+            {companyIndustryStats.map((item, index) => (
+              <div key={item.name} className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                <div className="w-2.5 h-2.5 rounded-xs" style={{ backgroundColor: SOURCE_COLORS[index % SOURCE_COLORS.length] }} />
                 <span>{item.name} ({item.value})</span>
               </div>
             ))}
