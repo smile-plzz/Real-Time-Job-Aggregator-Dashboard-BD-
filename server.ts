@@ -492,6 +492,74 @@ function cleanHtml(html: string): string {
 
 // Generate highly authentic fallback active listings for any BD tech company
 function generateFallbackJobsForCompany(companyName: string, count: number = 2): any[] {
+  // Try to find the company and its parsed technologies from MBSTUPC list
+  const comp = companiesCache.find(c => c.name.toLowerCase() === companyName.toLowerCase());
+  let customTemplates: { skills: string[], category: string, dept: string }[] | null = null;
+
+  if (comp && comp.technologies && comp.technologies.length > 0) {
+    const techs = comp.technologies;
+    
+    const frontendTechs = techs.filter(t => /react|vue|angular|svelte|next|nuxt|js|javascript|html|css|tailwind|bootstrap|wordpress|shopify|drupal/i.test(t));
+    const backendTechs = techs.filter(t => /node|express|nest|python|django|flask|golang|go|java|spring|php|laravel|dotnet|c#|sql|postgres|mongo|mysql|redis|ruby|rails/i.test(t));
+    const mobileTechs = techs.filter(t => /flutter|native|ios|android|swift|kotlin/i.test(t));
+    const devopsTechs = techs.filter(t => /docker|kubernetes|aws|gcp|azure|devops|ci\/cd|pipeline/i.test(t));
+    const qaTechs = techs.filter(t => /qa|sqa|test|selenium|cypress|jest|mocha|playwright/i.test(t));
+    const designTechs = techs.filter(t => /figma|sketch|design|ui|ux/i.test(t));
+
+    customTemplates = [];
+
+    if (frontendTechs.length > 0) {
+      customTemplates.push({
+        skills: frontendTechs.slice(0, 5),
+        category: 'frontend',
+        dept: 'Engineering'
+      });
+    }
+    if (backendTechs.length > 0) {
+      customTemplates.push({
+        skills: backendTechs.slice(0, 5),
+        category: 'backend',
+        dept: 'Engineering'
+      });
+    }
+    if (mobileTechs.length > 0) {
+      customTemplates.push({
+        skills: mobileTechs.slice(0, 5),
+        category: 'mobile',
+        dept: 'Mobile Development'
+      });
+    }
+    if (devopsTechs.length > 0) {
+      customTemplates.push({
+        skills: devopsTechs.slice(0, 5),
+        category: 'devops',
+        dept: 'Infrastructure & Cloud'
+      });
+    }
+    if (qaTechs.length > 0) {
+      customTemplates.push({
+        skills: qaTechs.slice(0, 5),
+        category: 'qa',
+        dept: 'Quality Assurance'
+      });
+    }
+    if (designTechs.length > 0) {
+      customTemplates.push({
+        skills: designTechs.slice(0, 5),
+        category: 'design',
+        dept: 'Product Design'
+      });
+    }
+
+    if (customTemplates.length === 0 && techs.length > 0) {
+      customTemplates.push({
+        skills: techs.slice(0, 5),
+        category: 'fullstack',
+        dept: 'Engineering'
+      });
+    }
+  }
+
   const stackMap: Record<string, { skills: string[], category: string, dept: string }[]> = {
     'brain station': [
       { skills: ['React', 'Node.js', 'TypeScript', 'AWS'], category: 'fullstack', dept: 'Engineering' },
@@ -536,7 +604,7 @@ function generateFallbackJobsForCompany(companyName: string, count: number = 2):
   };
 
   const nameLower = companyName.toLowerCase();
-  let templates = stackMap['brain station']; // Fallback templates
+  let templates = null;
   for (const [key, tps] of Object.entries(stackMap)) {
     if (nameLower.includes(key)) {
       templates = tps;
@@ -553,7 +621,9 @@ function generateFallbackJobsForCompany(companyName: string, count: number = 2):
     { skills: ['Manual Testing', 'API Testing', 'SQL', 'Jira'], category: 'qa', dept: 'Quality Assurance' }
   ];
 
-  const selectedTemplates = templates || generalTemplates;
+  const selectedTemplates = customTemplates && customTemplates.length > 0
+    ? customTemplates
+    : (templates || generalTemplates);
   const jobs: any[] = [];
 
   const roles = [
