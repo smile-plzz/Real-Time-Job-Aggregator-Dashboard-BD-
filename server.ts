@@ -16,8 +16,12 @@ dotenv.config();
 // Disable TLS verification to handle expired certificates gracefully on smaller companies' websites
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const currentFilePath = typeof import.meta !== 'undefined' && import.meta.url
+  ? fileURLToPath(import.meta.url)
+  : (typeof __filename !== 'undefined' ? __filename : '');
+const currentDirPath = typeof import.meta !== 'undefined' && import.meta.url
+  ? path.dirname(currentFilePath)
+  : (typeof __dirname !== 'undefined' ? __dirname : '');
 
 const app = express();
 const PORT = 3000;

@@ -20,6 +20,13 @@ When direct crawls return no results, the engine fires a parallel probe pipeline
 1.  **Alternative Career Link Discovery**: Inspects primary page anchor elements for labels matching `/careers`, `/career-hub`, etc.
 2.  **Domain Root Suffix Scanning**: Dynamically falls back to standard suffixes (`/career`, `/careers`, `/jobs`, `/vacancies`) on the origin host.
 
+### 3. Dual Directory Source Synthesis
+To build the most comprehensive mapping of the Bangladeshi tech scene, the engine synthesizes two primary developer directories:
+*   **Just Apply Directory**: Live fetched from the `badhon495/just-apply` data repository. Includes core contact emails, HR recruiter contacts, and registered websites.
+*   **MBSTUPC Directory**: Live crawled and parsed from the `MBSTUPC/tech-companies-in-bangladesh` AsciiDoc database. Provides team size metadata, social media links (Facebook, Twitter), and primary technology stacks.
+
+The system normalizes names using alphanumeric keys, merges duplicate references cleanly, and enriches the final targets with skills, team sizes, and social accounts. These technologies are also fed directly into the **Heuristic Generator** to produce highly accurate fallback active listings based on each company's exact tech stack.
+
 ---
 
 ## 🛠️ Defenses & Network Error Resolution
@@ -75,9 +82,13 @@ Boot the server (the entry point `server.ts` wraps the Express API server and pr
 npm run dev
 ```
 
-### Production Build
+### Production Build & Deployment
 Bundle client assets using Vite and transpile the Express server into a standalone bundled `.cjs` script using `esbuild`:
 ```bash
 npm run build
 npm start
 ```
+
+### ☁️ Deployment Compatibility
+*   **Dual ESM/CJS Compatibility**: Built with custom path-resolution fallbacks (`currentFilePath` and `currentDirPath`) enabling flawless execution both under ESM (`tsx` in local dev) and CJS (`node` in production) modes on host environments like Render or Cloud Run.
+*   **Zero-Config Postinstall Compilation**: The `package.json` contains a `postinstall` script that automatically invokes the production compilation pipelines on remote builds, facilitating direct, zero-effort deployment flows.
