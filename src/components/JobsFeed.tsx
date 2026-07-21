@@ -11,7 +11,6 @@ import { Job, Company, validateJob } from '../types';
 interface JobsFeedProps {
   jobs: Job[];
   onSelectJob: (job: Job) => void;
-  onOpenAddModal: () => void;
   companies: Company[];
   bulkScraping: boolean;
   onBulkScrape: (companies: Company[], heuristic?: boolean) => void;
@@ -20,7 +19,6 @@ interface JobsFeedProps {
 export default function JobsFeed({ 
   jobs, 
   onSelectJob, 
-  onOpenAddModal, 
   companies = [], 
   bulkScraping = false, 
   onBulkScrape 
@@ -31,6 +29,7 @@ export default function JobsFeed({
   const [companyFilter, setCompanyFilter] = useState('all');
   const [jobTypeFilter, setJobTypeFilter] = useState('all');
   const [salaryFilter, setSalaryFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState('all');
   const [selectedSkillTag, setSelectedSkillTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>('newest');
   const [activeInfoKey, setActiveInfoKey] = useState<string | null>(null);
@@ -104,6 +103,7 @@ export default function JobsFeed({
     setCompanyFilter('all');
     setJobTypeFilter('all');
     setSalaryFilter('all');
+    setSourceFilter('all');
     setSelectedSkillTag(null);
   };
 
@@ -168,11 +168,12 @@ export default function JobsFeed({
     const matchesCategory = categoryFilter === 'all' || job.category === categoryFilter;
     const matchesExperience = experienceFilter === 'all' || job.experienceLevel === experienceFilter;
     const matchesCompany = companyFilter === 'all' || job.companyName === companyFilter;
+    const matchesSource = sourceFilter === 'all' || (job.source || '').toLowerCase() === sourceFilter.toLowerCase();
     
     const matchesSelectedSkill = !selectedSkillTag || 
       job.skills.some(s => s.toLowerCase() === selectedSkillTag.toLowerCase());
 
-    return matchesSearch && matchesCategory && matchesExperience && matchesCompany && matchesSelectedSkill && matchesSalaryBracket(job) && matchesJobType(job);
+    return matchesSearch && matchesCategory && matchesExperience && matchesCompany && matchesSource && matchesSelectedSkill && matchesSalaryBracket(job) && matchesJobType(job);
   });
 
   // Calculate maximum salary helper for precise sorting
@@ -229,6 +230,7 @@ export default function JobsFeed({
     companyFilter !== 'all' || 
     jobTypeFilter !== 'all' || 
     salaryFilter !== 'all' || 
+    sourceFilter !== 'all' || 
     selectedSkillTag !== null;
 
   // Format relative date for listing cards
@@ -261,13 +263,6 @@ export default function JobsFeed({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={onOpenAddModal}
-            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-          >
-            + Add Manual Listing
-          </button>
-          
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
@@ -371,7 +366,7 @@ export default function JobsFeed({
         </div>
 
         {/* Primary Filter Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3">
           {/* Keyword Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
@@ -444,6 +439,17 @@ export default function JobsFeed({
             <option value="mid">Mid Budget (BDT 50K - 100K)</option>
             <option value="low">Entry Budget (BDT &lt; 50K)</option>
             <option value="negotiable">Negotiable Salary</option>
+          </select>
+
+          {/* Source Filter */}
+          <select
+            value={sourceFilter}
+            onChange={(e) => setSourceFilter(e.target.value)}
+            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all animate-fade-in"
+          >
+            <option value="all">All Sources</option>
+            <option value="heuristics">Direct Scrapes</option>
+            <option value="bd tech jobs">BD Tech Jobs</option>
           </select>
         </div>
 
@@ -559,10 +565,19 @@ export default function JobsFeed({
                   {/* Top Details Row */}
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center flex-wrap gap-2">
                         <span className="text-xs font-semibold text-slate-400 group-hover:text-indigo-400 transition-colors">
                           {job.companyName}
                         </span>
+                        {job.source && (
+                          <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded font-mono ${
+                            job.source.toLowerCase() === 'bd tech jobs' || job.source.toLowerCase() === 'bdtechjobs'
+                              ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/20'
+                              : 'text-slate-400 bg-slate-500/10 border border-slate-500/20'
+                          }`}>
+                            {job.source}
+                          </span>
+                        )}
                         {auditBadge}
                       </div>
                       <h3 className="text-base font-semibold text-slate-100 tracking-tight leading-snug group-hover:text-white mt-0.5">
@@ -752,13 +767,6 @@ export default function JobsFeed({
                   >
                     <Zap className="w-4 h-4 text-amber-300 animate-pulse" />
                     Launch Scraper Engine (Fast Scan)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onOpenAddModal}
-                    className="w-full sm:w-auto px-5 py-3 bg-[#161B22] hover:bg-[#21262d] border border-[#30363d] hover:border-slate-500 text-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
-                  >
-                    + Register Manual Listing
                   </button>
                 </div>
               </div>

@@ -12,7 +12,7 @@ import StatsSection from './components/StatsSection';
 import CompanyList from './components/CompanyList';
 import JobsFeed from './components/JobsFeed';
 import JobDetailModal from './components/JobDetailModal';
-import ManualAddModal from './components/ManualAddModal';
+// No manual listing imports needed
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import CrawlerDocs from './components/CrawlerDocs';
 import ExportSection from './components/ExportSection';
@@ -30,7 +30,6 @@ export default function App() {
   });
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'jobs' | 'directory' | 'analytics' | 'docs' | 'export'>('jobs');
   
   // Loading & Global States
@@ -207,22 +206,7 @@ export default function App() {
     }
   };
 
-  // Handle saving manually added listings
-  const handleSaveManualJob = async (jobData: any) => {
-    const response = await fetch('/api/jobs/add', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(jobData)
-    });
-
-    if (response.ok) {
-      showNotification('Custom listing added successfully!', 'success');
-      fetchAllData(true);
-    } else {
-      const err = await response.json();
-      throw new Error(err.error || 'Failed to record custom listing');
-    }
-  };
+  // Manual job creation removed
 
   // Handle Cache resets
   const handleResetCache = async () => {
@@ -386,7 +370,6 @@ export default function App() {
                     <JobsFeed 
                       jobs={jobs} 
                       onSelectJob={setSelectedJob} 
-                      onOpenAddModal={() => setIsAddModalOpen(true)}
                       companies={companies}
                       bulkScraping={bulkScraping}
                       onBulkScrape={handleBulkScrape}
@@ -507,14 +490,6 @@ export default function App() {
             job={selectedJob} 
             company={companies.find(c => c.name === selectedJob.companyName)}
             onClose={() => setSelectedJob(null)} 
-          />
-        )}
-        
-        {isAddModalOpen && (
-          <ManualAddModal 
-            companies={companies} 
-            onClose={() => setIsAddModalOpen(false)} 
-            onSave={handleSaveManualJob}
           />
         )}
       </AnimatePresence>

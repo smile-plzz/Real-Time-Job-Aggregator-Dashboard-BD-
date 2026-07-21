@@ -1,7 +1,7 @@
 {
   "name": "TechHub BD Intelligence",
   "description": "Real-time career aggregator and geospatial market analytics dashboard for Bangladesh technology and software engineering companies.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["geolocation"],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
   ]

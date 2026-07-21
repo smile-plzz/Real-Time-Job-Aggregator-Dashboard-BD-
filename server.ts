@@ -466,6 +466,27 @@ async function loadCompaniesFromDirectory() {
       }
     });
 
+    const bdTechJobsCompany = {
+      id: "company-bdtechjobs",
+      name: "BD Tech Jobs",
+      location: "Dhaka, Bangladesh (Aggregator Portal)",
+      website: "https://www.bdtechjobs.com/",
+      career: "https://www.bdtechjobs.com/",
+      email: "info@bdtechjobs.com",
+      linkedin: "https://www.linkedin.com/company/bdtechjobs",
+      contact: "https://www.bdtechjobs.com/",
+      technologies: ["React", "Node.js", "Python", "PHP", "Flutter", "Django", "DevOps"],
+      size: "Aggregator Platform",
+      facebook: "",
+      twitter: "",
+      scrapeStatus: 'idle',
+      jobCount: 0
+    };
+
+    if (!mergedList.some(c => c.name === "BD Tech Jobs")) {
+      mergedList.unshift(bdTechJobsCompany);
+    }
+
     companiesCache = mergedList;
     console.log(`Merged Tech Companies directory completed successfully! Registered ${companiesCache.length} unique companies.`);
     
@@ -476,17 +497,44 @@ async function loadCompaniesFromDirectory() {
 
   } catch (error) {
     console.error('Error fetching Just Apply company list. Loading default companies list...', error);
-    companiesCache = FALLBACK_COMPANIES.map((c, idx) => ({
+    const mappedFallback = FALLBACK_COMPANIES.map((c, idx) => ({
       id: `company-${idx}`,
       ...c,
       scrapeStatus: 'idle',
       jobCount: jobsCache.filter(j => j.companyName === c.name).length
     }));
+
+    const bdTechJobsCompany = {
+      id: "company-bdtechjobs",
+      name: "BD Tech Jobs",
+      location: "Dhaka, Bangladesh (Aggregator Portal)",
+      website: "https://www.bdtechjobs.com/",
+      career: "https://www.bdtechjobs.com/",
+      email: "info@bdtechjobs.com",
+      linkedin: "https://www.linkedin.com/company/bdtechjobs",
+      contact: "https://www.bdtechjobs.com/",
+      technologies: ["React", "Node.js", "Python", "PHP", "Flutter", "Django", "DevOps"],
+      size: "Aggregator Platform",
+      facebook: "",
+      twitter: "",
+      scrapeStatus: 'idle',
+      jobCount: 0
+    };
+
+    if (!mappedFallback.some(c => c.name === "BD Tech Jobs")) {
+      mappedFallback.unshift(bdTechJobsCompany);
+    }
+
+    companiesCache = mappedFallback;
   }
 }
 
 // Call on startup
-loadCompaniesFromDirectory();
+async function initServerCache() {
+  await loadCompaniesFromDirectory();
+  // Removed preloading jobs on startup to ensure a completely clean initial state, as requested
+}
+initServerCache();
 
 // HTML cleaning helper to reduce tokens and expose raw text lines
 function cleanHtml(html: string): string {
@@ -1442,6 +1490,154 @@ async function scrapeAndAnalyzePage(url: string, companyName: string): Promise<a
   }
 }
 
+// Dedicated, native crawler to aggregate live tech listings from BD Tech Jobs (https://www.bdtechjobs.com/)
+async function scrapeBDTechJobs(): Promise<any[]> {
+  try {
+    console.log('Fetching live listings from BD Tech Jobs...');
+    const response = await fetch('https://www.bdtechjobs.com/', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch BD Tech Jobs: HTTP ${response.status}`);
+    }
+    const html = await response.text();
+    const $ = cheerio.load(html);
+    const extractedJobs: any[] = [];
+
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const text = $(el).text().trim();
+        const data = JSON.parse(text);
+        
+        if (data['@type'] === 'ItemList' && Array.isArray(data.itemListElement)) {
+          data.itemListElement.forEach((element: any) => {
+            const item = element.item;
+            if (item && item['@type'] === 'JobPosting') {
+              const rawTitle = item.title || 'Software Engineer';
+              const rawDesc = item.description || '';
+              const rawCompany = item.hiringOrganization?.name || 'BD Tech Jobs Partner';
+              const rawUrl = item.url || 'https://www.bdtechjobs.com/';
+              
+              // Extract skills from LD skills or description text
+              let skillsList: string[] = [];
+              if (typeof item.skills === 'string' && item.skills.trim()) {
+                skillsList = item.skills.split(',').map((s: string) => s.trim()).filter(Boolean);
+              } else if (rawDesc) {
+                const skillsMatch = rawDesc.match(/skills:\s*([^.]+)/i);
+                if (skillsMatch && skillsMatch[1]) {
+                  skillsList = skillsMatch[1].split(',').map((s: string) => s.trim()).filter(Boolean);
+                }
+              }
+
+              // Categorize based on title/skills
+              const titleLower = rawTitle.toLowerCase();
+              let category = 'other';
+              if (titleLower.includes('front') || titleLower.includes('react') || titleLower.includes('vue') || titleLower.includes('ui/ux') || titleLower.includes('designer') || titleLower.includes('css') || titleLower.includes('html')) {
+                category = 'frontend';
+              } else if (titleLower.includes('back') || titleLower.includes('node') || titleLower.includes('django') || titleLower.includes('laravel') || titleLower.includes('php') || titleLower.includes('python') || titleLower.includes('go') || titleLower.includes('ruby') || titleLower.includes('java')) {
+                category = 'backend';
+              } else if (titleLower.includes('full') || titleLower.includes('stack') || titleLower.includes('django + vue') || titleLower.includes('next.js')) {
+                category = 'fullstack';
+              } else if (titleLower.includes('mobile') || titleLower.includes('flutter') || titleLower.includes('android') || titleLower.includes('ios') || titleLower.includes('dart') || titleLower.includes('swift')) {
+                category = 'mobile';
+              } else if (titleLower.includes('qa') || titleLower.includes('test') || titleLower.includes('quality') || titleLower.includes('automation engineer')) {
+                category = 'qa';
+              } else if (titleLower.includes('devops') || titleLower.includes('cloud') || titleLower.includes('aws') || titleLower.includes('sysadmin') || titleLower.includes('network') || titleLower.includes('infrastructure')) {
+                category = 'devops';
+              } else if (titleLower.includes('product') || titleLower.includes('project') || titleLower.includes('scrum') || titleLower.includes('manager') || titleLower.includes('lead') || titleLower.includes('scrum master')) {
+                category = 'product';
+              } else if (titleLower.includes('design') || titleLower.includes('figma') || titleLower.includes('graphic') || titleLower.includes('illustrator')) {
+                category = 'design';
+              }
+
+              // Experience mapping
+              let experienceLevel = 'unspecified';
+              if (titleLower.includes('senior') || titleLower.includes('sr.') || titleLower.includes('lead') || titleLower.includes('architect') || titleLower.includes('principal')) {
+                experienceLevel = (titleLower.includes('lead') || titleLower.includes('architect')) ? 'lead' : 'senior';
+              } else if (titleLower.includes('junior') || titleLower.includes('jr.') || titleLower.includes('associate') || titleLower.includes('trainee') || titleLower.includes('intern') || titleLower.includes('fresh')) {
+                experienceLevel = (titleLower.includes('intern') || titleLower.includes('trainee')) ? 'intern' : 'junior';
+              } else if (titleLower.includes('mid') || titleLower.includes('middle') || titleLower.includes('intermediate')) {
+                experienceLevel = 'mid';
+              }
+
+              const cleanLocality = item.jobLocation?.address?.addressLocality || 'Dhaka';
+              const cleanRegion = item.jobLocation?.address?.addressRegion || 'Dhaka';
+              
+              extractedJobs.push({
+                title: rawTitle,
+                companyName: rawCompany,
+                department: 'Engineering',
+                location: cleanLocality === cleanRegion ? `${cleanLocality}, Bangladesh` : `${cleanLocality}, ${cleanRegion}, Bangladesh`,
+                type: item.employmentType === 'FULL_TIME' ? 'Full-time' : (item.employmentType === 'PART_TIME' ? 'Part-time' : 'Full-time'),
+                link: rawUrl,
+                skills: skillsList,
+                experienceLevel: experienceLevel,
+                category: category,
+                salary: 'Negotiable',
+                summary: rawDesc || `Aggregated ${rawTitle} position at ${rawCompany}.`,
+                dateAdded: item.datePosted ? new Date(item.datePosted).toISOString() : new Date().toISOString(),
+                source: 'BD Tech Jobs'
+              });
+            }
+          });
+        }
+      } catch (err: any) {
+        console.error('Failed parsing single ld+json tag inside scrapeBDTechJobs:', err.message);
+      }
+    });
+
+    console.log(`Successfully scraped and compiled ${extractedJobs.length} live listings from BD Tech Jobs.`);
+    return extractedJobs;
+  } catch (error: any) {
+    console.error('Error in scrapeBDTechJobs crawler:', error.message || error);
+    return [];
+  }
+}
+
+// Dedicated helper to pre-fill jobs cache with live entries from BD Tech Jobs
+async function preloadBDTechJobsOnStartup() {
+  try {
+    const scraped = await scrapeBDTechJobs();
+    if (scraped.length > 0) {
+      // Clear any preloaded BD Tech Jobs listings to prevent duplicates
+      jobsCache = jobsCache.filter(j => j.source !== 'BD Tech Jobs');
+      
+      const mapped = scraped.map((j, idx) => ({
+        id: `scraped-bdtech-${Date.now()}-${idx}`,
+        companyName: j.companyName,
+        title: j.title,
+        department: j.department,
+        location: j.location,
+        type: j.type,
+        link: j.link,
+        skills: j.skills,
+        experienceLevel: j.experienceLevel,
+        category: j.category,
+        salary: j.salary,
+        summary: j.summary,
+        dateAdded: j.dateAdded,
+        source: 'BD Tech Jobs'
+      }));
+
+      jobsCache.unshift(...mapped);
+      console.log(`Preloaded ${mapped.length} jobs from BD Tech Jobs successfully.`);
+      
+      // Sync jobCount for the company registry representation
+      const bdIndex = companiesCache.findIndex(c => c.name === "BD Tech Jobs");
+      if (bdIndex !== -1) {
+        companiesCache[bdIndex].jobCount = mapped.length;
+        companiesCache[bdIndex].scrapeStatus = 'completed';
+        companiesCache[bdIndex].lastScraped = new Date().toISOString();
+      }
+    }
+  } catch (err: any) {
+    console.error('Failed preloading BD Tech Jobs on startup:', err.message || err);
+  }
+}
+
 // Multi-path aggregate crawler pipeline that executes comprehensive checks, alternate links discovery, and smart probing
 async function crawlCompanyCareerHub(initialUrl: string, companyName: string, heuristicMode = false): Promise<any[]> {
   console.log(`[Crawler] Starting career hub crawl (Heuristic=${heuristicMode}) for ${companyName} at ${initialUrl}`);
@@ -1645,33 +1841,7 @@ app.post('/api/reset-cache', (req, res) => {
   res.json({ message: 'Cache successfully cleared. Platform is ready for new real-time scans.', jobsCount: 0 });
 });
 
-// API: Manual Add Job
-app.post('/api/jobs/add', (req, res) => {
-  const { title, companyName, department, location, type, link, skills, experienceLevel, category, salary, summary } = req.body;
-  
-  if (!title || !companyName || !category) {
-    return res.status(400).json({ error: 'Title, company name, and category are required' });
-  }
-
-  const newJob = {
-    id: `manual-${Date.now()}`,
-    companyName,
-    title,
-    department: department || 'Engineering',
-    location: location || 'Dhaka',
-    type: type || 'Full-time',
-    link: link || '#',
-    skills: Array.isArray(skills) ? skills : (skills ? skills.split(',').map((s: string) => s.trim()) : []),
-    experienceLevel: experienceLevel || 'unspecified',
-    category,
-    salary: salary || 'Negotiable',
-    summary: summary || 'No description provided.',
-    dateAdded: new Date().toISOString()
-  };
-
-  jobsCache.unshift(newJob);
-  res.status(201).json(newJob);
-});
+// Manual job adding API removed
 
 // API: Live Scrape single company using Heuristics
 app.post('/api/scrape', async (req, res) => {
@@ -1693,42 +1863,70 @@ app.post('/api/scrape', async (req, res) => {
     if (careerUrl) {
       try {
         const isHeuristic = mode === 'heuristic';
-        resultJobs = await crawlCompanyCareerHub(careerUrl, companyName, isHeuristic);
+        if (companyName === 'BD Tech Jobs' || careerUrl.includes('bdtechjobs.com')) {
+          resultJobs = await scrapeBDTechJobs();
+        } else {
+          resultJobs = await crawlCompanyCareerHub(careerUrl, companyName, isHeuristic);
+        }
         if (resultJobs.length > 0) {
           directFetchSuccessful = true;
         }
-        console.log(`crawlCompanyCareerHub extracted and deep-crawled ${resultJobs.length} jobs for ${companyName}`);
+        console.log(`Live scraper extracted ${resultJobs.length} jobs for ${companyName}`);
       } catch (err) {
-        console.warn(`crawlCompanyCareerHub failed or timed out for ${companyName}. Falling back to authentic generator.`, err);
+        console.warn(`Live scraper failed or timed out for ${companyName}. Falling back to authentic generator.`, err);
       }
     }
 
     // Fallback if direct fetch didn't yield jobs
-    if (!directFetchSuccessful) {
+    if (!directFetchSuccessful && companyName !== 'BD Tech Jobs') {
       console.log(`Using authentic career database generator for: ${companyName}`);
       resultJobs = generateFallbackJobsForCompany(companyName, 2);
     }
 
     // Process extracted jobs
     if (Array.isArray(resultJobs) && resultJobs.length > 0) {
-      jobsCache = jobsCache.filter(j => j.companyName !== companyName);
+      if (companyName === 'BD Tech Jobs') {
+        jobsCache = jobsCache.filter(j => j.source !== 'BD Tech Jobs');
+      } else {
+        jobsCache = jobsCache.filter(j => j.companyName !== companyName);
+      }
 
-      const mappedJobs = resultJobs.map((j: any, i: number) => ({
-        id: `scraped-${companyName.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}-${i}`,
-        companyName,
-        title: j.title || 'Software Engineer',
-        department: j.department || 'Engineering',
-        location: j.location || 'Dhaka, Bangladesh',
-        type: j.type || 'Full-time',
-        link: j.link && j.link.startsWith('http') ? j.link : (careerUrl ? (careerUrl.startsWith('http') ? careerUrl : `https://${careerUrl}`) : 'https://badhon495.github.io/just-apply/'),
-        skills: Array.isArray(j.skills) ? j.skills : [],
-        experienceLevel: ['junior', 'mid', 'senior', 'lead', 'intern', 'unspecified'].includes(j.experienceLevel) ? j.experienceLevel : 'unspecified',
-        category: ['frontend', 'backend', 'fullstack', 'mobile', 'devops', 'qa', 'product', 'design', 'other'].includes(j.category) ? j.category : 'other',
-        salary: j.salary || 'Negotiable',
-        summary: j.summary || 'Role extracted from career page listing.',
-        dateAdded: new Date().toISOString(),
-        source: j.source || 'heuristics'
-      }));
+      const mappedJobs = resultJobs.map((j: any, i: number) => {
+        if (companyName === 'BD Tech Jobs') {
+          return {
+            id: `scraped-bdtech-${Date.now()}-${i}`,
+            companyName: j.companyName || 'BD Tech Jobs Partner',
+            title: j.title || 'Software Engineer',
+            department: j.department || 'Engineering',
+            location: j.location || 'Dhaka, Bangladesh',
+            type: j.type || 'Full-time',
+            link: j.link && j.link.startsWith('http') ? j.link : 'https://www.bdtechjobs.com/',
+            skills: Array.isArray(j.skills) ? j.skills : [],
+            experienceLevel: j.experienceLevel || 'unspecified',
+            category: j.category || 'other',
+            salary: j.salary || 'Negotiable',
+            summary: j.summary || 'Role extracted from BD Tech Jobs aggregated portal.',
+            dateAdded: j.dateAdded || new Date().toISOString(),
+            source: 'BD Tech Jobs'
+          };
+        }
+        return {
+          id: `scraped-${companyName.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}-${i}`,
+          companyName,
+          title: j.title || 'Software Engineer',
+          department: j.department || 'Engineering',
+          location: j.location || 'Dhaka, Bangladesh',
+          type: j.type || 'Full-time',
+          link: j.link && j.link.startsWith('http') ? j.link : (careerUrl ? (careerUrl.startsWith('http') ? careerUrl : `https://${careerUrl}`) : 'https://badhon495.github.io/just-apply/'),
+          skills: Array.isArray(j.skills) ? j.skills : [],
+          experienceLevel: ['junior', 'mid', 'senior', 'lead', 'intern', 'unspecified'].includes(j.experienceLevel) ? j.experienceLevel : 'unspecified',
+          category: ['frontend', 'backend', 'fullstack', 'mobile', 'devops', 'qa', 'product', 'design', 'other'].includes(j.category) ? j.category : 'other',
+          salary: j.salary || 'Negotiable',
+          summary: j.summary || 'Role extracted from career page listing.',
+          dateAdded: new Date().toISOString(),
+          source: j.source || 'heuristics'
+        };
+      });
 
       jobsCache.unshift(...mappedJobs);
 
@@ -1828,7 +2026,11 @@ app.post('/api/scrape-bulk', async (req, res) => {
 
           if (c.career) {
             try {
-              resultJobs = await crawlCompanyCareerHub(c.career, c.name, !!heuristic);
+              if (c.name === 'BD Tech Jobs' || c.career.includes('bdtechjobs.com')) {
+                resultJobs = await scrapeBDTechJobs();
+              } else {
+                resultJobs = await crawlCompanyCareerHub(c.career, c.name, !!heuristic);
+              }
               if (resultJobs.length > 0) {
                 directFetchSuccessful = true;
               }
@@ -1837,30 +2039,55 @@ app.post('/api/scrape-bulk', async (req, res) => {
             }
           }
 
-          if (!directFetchSuccessful) {
+          if (!directFetchSuccessful && c.name !== 'BD Tech Jobs') {
             resultJobs = generateFallbackJobsForCompany(c.name, 2);
           }
 
           const freshCompIndex = companiesCache.findIndex(cached => cached.name === c.name);
 
           if (Array.isArray(resultJobs) && resultJobs.length > 0) {
-            jobsCache = jobsCache.filter(j => j.companyName !== c.name);
-            const mapped = resultJobs.map((j: any, idx: number) => ({
-              id: `scraped-${c.name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}-${idx}`,
-              companyName: c.name,
-              title: j.title || 'Software Engineer',
-              department: j.department || 'Engineering',
-              location: j.location || 'Dhaka, Bangladesh',
-              type: j.type || 'Full-time',
-              link: j.link && j.link.startsWith('http') ? j.link : (c.career ? (c.career.startsWith('http') ? c.career : `https://${c.career}`) : 'https://badhon495.github.io/just-apply/'),
-              skills: Array.isArray(j.skills) ? j.skills : [],
-              experienceLevel: j.experienceLevel || 'unspecified',
-              category: j.category || 'other',
-              salary: j.salary || 'Negotiable',
-              summary: j.summary || 'Role extracted via modern career scan heuristics.',
-              dateAdded: new Date().toISOString(),
-              source: j.source || 'heuristics'
-            }));
+            if (c.name === 'BD Tech Jobs') {
+              jobsCache = jobsCache.filter(j => j.source !== 'BD Tech Jobs');
+            } else {
+              jobsCache = jobsCache.filter(j => j.companyName !== c.name);
+            }
+
+            const mapped = resultJobs.map((j: any, idx: number) => {
+              if (c.name === 'BD Tech Jobs') {
+                return {
+                  id: `scraped-bdtech-${Date.now()}-${idx}`,
+                  companyName: j.companyName || 'BD Tech Jobs Partner',
+                  title: j.title || 'Software Engineer',
+                  department: j.department || 'Engineering',
+                  location: j.location || 'Dhaka, Bangladesh',
+                  type: j.type || 'Full-time',
+                  link: j.link && j.link.startsWith('http') ? j.link : 'https://www.bdtechjobs.com/',
+                  skills: Array.isArray(j.skills) ? j.skills : [],
+                  experienceLevel: j.experienceLevel || 'unspecified',
+                  category: j.category || 'other',
+                  salary: j.salary || 'Negotiable',
+                  summary: j.summary || 'Role extracted from BD Tech Jobs aggregated portal.',
+                  dateAdded: j.dateAdded || new Date().toISOString(),
+                  source: 'BD Tech Jobs'
+                };
+              }
+              return {
+                id: `scraped-${c.name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}-${idx}`,
+                companyName: c.name,
+                title: j.title || 'Software Engineer',
+                department: j.department || 'Engineering',
+                location: j.location || 'Dhaka, Bangladesh',
+                type: j.type || 'Full-time',
+                link: j.link && j.link.startsWith('http') ? j.link : (c.career ? (c.career.startsWith('http') ? c.career : `https://${c.career}`) : 'https://badhon495.github.io/just-apply/'),
+                skills: Array.isArray(j.skills) ? j.skills : [],
+                experienceLevel: j.experienceLevel || 'unspecified',
+                category: j.category || 'other',
+                salary: j.salary || 'Negotiable',
+                summary: j.summary || 'Role extracted via modern career scan heuristics.',
+                dateAdded: new Date().toISOString(),
+                source: j.source || 'heuristics'
+              };
+            });
 
             jobsCache.unshift(...mapped);
             if (freshCompIndex !== -1) {

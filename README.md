@@ -12,9 +12,9 @@ An elegant, real-time full-stack job board and career aggregator specializing in
 
 ## ✨ Features
 
-- **Real-Time Job Aggregation**: Live scraping of 150+ Bangladesh tech companies.
-- **Geospatial Intelligence Map**: Interactive Leaflet-powered map tracking tech clusters across Dhaka.
-- **Market Analytics Dashboard**: Deep telemetry on salary distributions, work modes (Remote/Hybrid/On-site), and technology stack demand.
+- **Real-Time Job Aggregation**: Live scraping of 150+ Bangladesh tech companies with native support for the **BDTechJobs** pipeline.
+- **Geospatial Intelligence Map**: Enhanced Leaflet-powered map supporting real-time user geolocation tracking, custom neon marker nodes, smooth camera animations ("flyTo"), and an interactive geocoder to instantly select and zoom to company coordinates.
+- **Enriched Market Analytics Dashboard**: Added deep cross-perspective analysis of salary trends by experience level alongside a breakdown of global joint venture origins and primary target market countries (USA, Japan, UK, Nordics, etc.).
 - **Dark Cosmic UI**: High-contrast, typography-focused dark mode design with subtle gradients, interactive motion, and grid layouts.
 - **Dual Directory Merging**: Merges data from JustApply and MBSTUPC directories on the fly.
 - **Advanced Filtering**: Filter by experience level, role category, company, salary band, and specific tech skills.
@@ -56,14 +56,21 @@ The crawler has been hardened with defenses to withstand common corporate server
 
 ## 📊 Rich Market Perspectives & Salary Analytics
 The app includes an **Advanced Analytics Dashboard** featuring live-processed statistical metrics:
-*   **Geospatial Intelligence Map**: Visualizing company distributions and tech clusters across Dhaka.
+*   **Geospatial Intelligence Map**: Visualizing company distributions, user proximity alignment, and tech clusters across Dhaka.
+*   **Global Partner & Origins breakdown**: Analyzes the international joint venture affiliations and primary market alignments of local tech companies (USA, Japan, UK, Switzerland, Nordics, etc.).
 *   **Market Vitality Index**: Real-time evaluation of job density across the Dhaka tech ecosystem.
 *   **Tech Spec Intensity**: Metrics tracking average programming skills and frameworks specified per role.
 *   **Flexibility Quotient**: Dynamic percentage representing the prevalence of Remote and Hybrid schedules.
-*   **Salary Analytics**: A comprehensive multi-bar chart comparing Minimum, Average, and Maximum BDT monthly salaries.
-*   **Strategic Market Narrative Panels**: Expert summaries discussing technology saturation (Node.js, TypeScript), geographic centralization (Gulshan, Banani, Mirpur), and salary transparency.
+*   **Salary Analytics**: Dynamic minimum, average, and maximum monthly compensation charts.
+*   **Double-Axis Role vs Experience Matrix**: High-fidelity comparative breakdown tracking wage trajectories (Junior vs Mid vs Senior vs Lead) across key professional roles like Frontend, Backend, DevOps, and Fullstack.
+*   **Strategic Market Narrative Panels**: Expert summaries discussing technology saturation, geographic centralization (Gulshan, Banani, Mirpur), and salary transparency.
 
 ---
+
+## 🧹 Initial Load & State Design
+To ensure optimal performance and reflect authentic data cycles:
+*   **Organic Startup State**: The database caches begin with a **perfectly clean slate** on server initialization. No preload seed mock records are used.
+*   **On-Demand Ingestion**: Users or administrators click **"Start Global Scan"** to dynamically fetch up-to-the-minute listings from the underlying scraping queues, compiling accurate directories from JustApply, MBSTUPC, and BDTechJobs on the fly.
 
 ## 📦 Getting Started
 
