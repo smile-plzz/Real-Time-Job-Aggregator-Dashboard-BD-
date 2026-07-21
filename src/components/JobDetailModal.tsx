@@ -5,15 +5,20 @@
 
 import React from 'react';
 import { motion } from 'motion/react';
-import { X, Building2, MapPin, Briefcase, Calendar, DollarSign, ExternalLink, Sparkles, AlertCircle, FileText } from 'lucide-react';
-import { Job } from '../types';
+import { Job, Company, validateJob, ValidationIssue } from '../types';
+import { 
+  X, Building2, MapPin, Briefcase, Calendar, DollarSign, ExternalLink, 
+  Sparkles, AlertCircle, FileText, AlertTriangle, Users, Globe, Mail, 
+  CheckCircle2, ShieldAlert 
+} from 'lucide-react';
 
 interface JobDetailModalProps {
   job: Job | null;
+  company?: Company;
   onClose: () => void;
 }
 
-export default function JobDetailModal({ job, onClose }: JobDetailModalProps) {
+export default function JobDetailModal({ job, company, onClose }: JobDetailModalProps) {
   if (!job) return null;
 
   const categoryLabels: Record<string, string> = {
@@ -35,6 +40,24 @@ export default function JobDetailModal({ job, onClose }: JobDetailModalProps) {
       day: 'numeric'
     });
   };
+
+  const validationIssues = validateJob(job);
+  const totalDeductions = validationIssues.reduce((acc, issue) => {
+    if (issue.type === 'error') return acc + 30;
+    if (issue.type === 'warning') return acc + 15;
+    return acc + 5;
+  }, 0);
+  const qualityScore = Math.max(10, 100 - totalDeductions);
+  
+  let scoreColor = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+  let scoreLabel = 'High Fidelity';
+  if (qualityScore < 50) {
+    scoreColor = 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+    scoreLabel = 'Low Fidelity';
+  } else if (qualityScore < 85) {
+    scoreColor = 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+    scoreLabel = 'Medium Fidelity';
+  }
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto" id="job-detail-modal">
@@ -77,6 +100,94 @@ export default function JobDetailModal({ job, onClose }: JobDetailModalProps) {
                 </div>
               </div>
             </div>
+
+            {/* Listing Integrity Audit Section */}
+            <div className="mb-6 bg-[#0A0C10] border border-[#161B22] rounded-xl p-5">
+              <div className="flex items-center justify-between border-b border-[#161B22] pb-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 text-indigo-400" />
+                  <h4 className="text-xs font-mono uppercase tracking-wider text-slate-400">Listing Quality Audit</h4>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-slate-500 font-medium font-mono">Quality Score:</span>
+                  <div className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold border font-mono ${scoreColor}`}>
+                    {qualityScore}% &bull; {scoreLabel}
+                  </div>
+                </div>
+              </div>
+
+              {validationIssues.length > 0 ? (
+                <div className="space-y-3">
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    Our live validator flagged the following structural/content issues with this aggregated listing:
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {validationIssues.map((issue, idx) => {
+                      const iconMap = {
+                        error: <X className="w-3.5 h-3.5 text-rose-400" />,
+                        warning: <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />,
+                        info: <AlertCircle className="w-3.5 h-3.5 text-blue-400" />
+                      };
+                      const bgMap = {
+                        error: 'bg-rose-500/5 border-rose-500/10 text-rose-300',
+                        warning: 'bg-amber-500/5 border-amber-500/10 text-amber-300',
+                        info: 'bg-blue-500/5 border-blue-500/10 text-blue-300'
+                      };
+                      return (
+                        <div key={idx} className={`p-2.5 rounded-lg border text-xs flex gap-2.5 items-start ${bgMap[issue.type]}`}>
+                          <div className="mt-0.5 shrink-0">{iconMap[issue.type]}</div>
+                          <div>
+                            <span className="font-bold tracking-wide block">{issue.message}</span>
+                            <span className="text-[11px] text-slate-400 mt-0.5 block leading-normal">{issue.description}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start gap-2 text-xs text-emerald-400 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-lg">
+                  <CheckCircle2 className="w-4 h-4 mt-0.5 text-emerald-400 shrink-0" />
+                  <div>
+                    <span className="font-bold block">100% Validation Passed</span>
+                    <span className="text-slate-400 text-[11px] mt-0.5 block">This listing conforms fully to high-fidelity schema standards. All critical descriptors, skills, and deep career paths were successfully parsed.</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Company Info Box (if available) */}
+            {company && (
+              <div className="mb-6 p-4 rounded-xl border border-[#161B22] bg-[#0A0C10]/50">
+                <h4 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-slate-500" />
+                  Company Snapshot
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {company.website && (
+                    <div className="flex items-center gap-2 text-slate-300 hover:text-indigo-400 transition-colors">
+                      <Globe className="w-4 h-4 text-slate-500 shrink-0" />
+                      <a href={company.website} target="_blank" rel="noopener noreferrer" className="truncate">
+                        {company.website.replace(/^https?:\/\//, '')}
+                      </a>
+                    </div>
+                  )}
+                  {company.size && company.size !== 'Please update' && (
+                    <div className="flex items-center gap-2 text-slate-300">
+                      <Users className="w-4 h-4 text-slate-500 shrink-0" />
+                      <span>{company.size} Employees</span>
+                    </div>
+                  )}
+                  {company.email && (
+                    <div className="flex items-center gap-2 text-slate-300 hover:text-indigo-400 transition-colors">
+                      <Mail className="w-4 h-4 text-slate-500 shrink-0" />
+                      <a href={`mailto:${company.email}`} className="truncate">{company.email}</a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Quick Metadata Grid */}
             <div className="grid grid-cols-2 gap-4 bg-[#0A0C10] p-4 rounded-xl border border-[#161B22] mb-6">
@@ -132,9 +243,9 @@ export default function JobDetailModal({ job, onClose }: JobDetailModalProps) {
               </h4>
               <div className="flex flex-wrap gap-1.5">
                 {job.skills && job.skills.length > 0 ? (
-                  job.skills.map(skill => (
+                  job.skills.map((skill, idx) => (
                     <span
-                      key={skill}
+                      key={`${skill}-${idx}`}
                       className="text-xs font-mono font-semibold bg-[#161B22] border border-[#30363d] text-slate-300 px-3 py-1 rounded-lg"
                     >
                       {skill}

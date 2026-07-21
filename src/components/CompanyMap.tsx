@@ -145,8 +145,8 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
                   </div>
                   {marker.company.technologies && marker.company.technologies.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {marker.company.technologies.slice(0, 5).map(t => (
-                        <span key={t} className="bg-indigo-100 text-indigo-800 text-[9px] px-1.5 py-0.5 rounded font-medium">
+                      {marker.company.technologies.slice(0, 5).map((t, idx) => (
+                        <span key={`${t}-${idx}`} className="bg-indigo-100 text-indigo-800 text-[9px] px-1.5 py-0.5 rounded font-medium">
                           {t}
                         </span>
                       ))}

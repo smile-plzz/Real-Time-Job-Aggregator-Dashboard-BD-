@@ -262,8 +262,8 @@ const SEED_JOBS = [
   }
 ];
 
-// Initialize with seed jobs
-jobsCache = [...SEED_JOBS];
+// Initialize with empty jobs to prevent misleading preloaded data
+jobsCache = [];
 
 // Helper to scrape/fetch MBSTUPC Tech Companies in Bangladesh list from GitHub
 async function loadCompaniesFromMBSTUPC() {
@@ -1636,13 +1636,13 @@ app.get('/api/stats', (req, res) => {
 
 // API: Reset / Clear Jobs Cache
 app.post('/api/reset-cache', (req, res) => {
-  jobsCache = [...SEED_JOBS];
+  jobsCache = [];
   companiesCache.forEach(c => {
     c.scrapeStatus = 'idle';
     c.lastScraped = undefined;
     c.error = undefined;
   });
-  res.json({ message: 'Cache successfully reset to initial seed state', jobsCount: jobsCache.length });
+  res.json({ message: 'Cache successfully cleared. Platform is ready for new real-time scans.', jobsCount: 0 });
 });
 
 // API: Manual Add Job
@@ -1768,8 +1768,16 @@ app.post('/api/scrape', async (req, res) => {
   }
 });
 
+let stopBulkScrapingFlag = false;
+
+app.post('/api/scrape-bulk/stop', (req, res) => {
+  stopBulkScrapingFlag = true;
+  res.json({ message: 'Bulk scraping stop requested' });
+});
+
 // API: Bulk Scrape Route (Sequentially/Concurrently scrapes selected companies)
 app.post('/api/scrape-bulk', async (req, res) => {
+  stopBulkScrapingFlag = false;
   const { companiesToScrape: rawCompanies, heuristic } = req.body; 
   
   if (!Array.isArray(rawCompanies) || rawCompanies.length === 0) {
@@ -1802,6 +1810,10 @@ app.post('/api/scrape-bulk', async (req, res) => {
 
     async function worker() {
       while (activeIndex < companiesToScrape.length) {
+        if (stopBulkScrapingFlag) {
+          console.log('Bulk scraping stopped by user.');
+          break;
+        }
         const c = companiesToScrape[activeIndex++];
         if (!c) break;
 

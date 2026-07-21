@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, RefreshCw, Layers, Cpu, AlertCircle, Trash2, Building, AlertTriangle, BarChart3, BookOpen } from 'lucide-react';
+import { Sparkles, RefreshCw, Layers, Cpu, AlertCircle, Trash2, Building, AlertTriangle, BarChart3, BookOpen, Download } from 'lucide-react';
 
 import { Company, Job, ScrapeStats } from './types';
 import StatsSection from './components/StatsSection';
@@ -15,6 +15,7 @@ import JobDetailModal from './components/JobDetailModal';
 import ManualAddModal from './components/ManualAddModal';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import CrawlerDocs from './components/CrawlerDocs';
+import ExportSection from './components/ExportSection';
 
 export default function App() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -30,7 +31,7 @@ export default function App() {
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'jobs' | 'directory' | 'analytics' | 'docs'>('jobs');
+  const [activeTab, setActiveTab] = useState<'jobs' | 'directory' | 'analytics' | 'docs' | 'export'>('jobs');
   
   // Loading & Global States
   const [loading, setLoading] = useState(true);
@@ -195,6 +196,17 @@ export default function App() {
     }
   };
 
+  const handleStopBulkScrape = async () => {
+    try {
+      await fetch('/api/scrape-bulk/stop', { method: 'POST' });
+      setBulkScraping(false);
+      showNotification('Bulk scan stopped.', 'info');
+      fetchAllData(true);
+    } catch (err) {
+      console.error('Failed to stop bulk scanning:', err);
+    }
+  };
+
   // Handle saving manually added listings
   const handleSaveManualJob = async (jobData: any) => {
     const response = await fetch('/api/jobs/add', {
@@ -328,6 +340,17 @@ export default function App() {
             <BookOpen className={`w-4 h-4 ${activeTab === 'docs' ? 'text-indigo-400' : 'text-slate-500'}`} />
             System Architecture
           </button>
+          <button
+            onClick={() => setActiveTab('export')}
+            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+              activeTab === 'export'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
+            }`}
+          >
+            <Download className={`w-4 h-4 ${activeTab === 'export' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            Export Data
+          </button>
         </div>
 
         {/* Global Loading state overlay */}
@@ -387,6 +410,7 @@ export default function App() {
                     onScrape={handleScrapeCompany}
                     bulkScraping={bulkScraping}
                     onBulkScrape={handleBulkScrape}
+                    onStopBulkScrape={handleStopBulkScrape}
                   />
                 </motion.div>
               )}
@@ -419,6 +443,19 @@ export default function App() {
                   id="docs-tab-content"
                 >
                   <CrawlerDocs />
+                </motion.div>
+              )}
+              {activeTab === 'export' && (
+                <motion.div
+                  key="export-tab"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="w-full"
+                  id="export-tab-content"
+                >
+                  <ExportSection companies={companies} jobs={jobs} />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -468,6 +505,7 @@ export default function App() {
         {selectedJob && (
           <JobDetailModal 
             job={selectedJob} 
+            company={companies.find(c => c.name === selectedJob.companyName)}
             onClose={() => setSelectedJob(null)} 
           />
         )}

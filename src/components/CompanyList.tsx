@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, Building2, ExternalLink, Globe, Linkedin, Mail, Play, AlertCircle, CheckCircle2, RefreshCw, Cpu, SlidersHorizontal, ArrowUpDown, MapPin, Sparkles, Layers, Users } from 'lucide-react';
+import { Search, Building2, ExternalLink, Globe, Linkedin, Mail, Play, AlertCircle, CheckCircle2, RefreshCw, Cpu, SlidersHorizontal, ArrowUpDown, MapPin, Sparkles, Layers, Users, StopCircle } from 'lucide-react';
 import { Company } from '../types';
 
 interface CompanyListProps {
@@ -13,9 +13,10 @@ interface CompanyListProps {
   onScrape: (companyName: string, careerUrl: string | null, mode: 'direct' | 'search') => void;
   bulkScraping: boolean;
   onBulkScrape: (selectedCompanies: Company[]) => void;
+  onStopBulkScrape: () => void;
 }
 
-export default function CompanyList({ companies, onScrape, bulkScraping, onBulkScrape }: CompanyListProps) {
+export default function CompanyList({ companies, onScrape, bulkScraping, onBulkScrape, onStopBulkScrape }: CompanyListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
@@ -190,7 +191,7 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
           <button
             onClick={triggerBulkScrapeTop5}
             disabled={bulkScraping}
-            className="px-4 py-2 bg-[#161B22] hover:bg-[#1f2631] text-slate-200 border border-[#30363d] rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-xs disabled:opacity-45 transition-all cursor-pointer"
+            className="px-4 py-2 bg-[#161B22] hover:bg-[#1f2631] text-slate-200 border border-[#30363d] rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-xs disabled:opacity-45 disabled:hidden transition-all cursor-pointer"
           >
             <Cpu className="w-4 h-4 text-indigo-400" />
             Bulk Scan Top 5 Portals
@@ -199,11 +200,21 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
           <button
             onClick={triggerBulkScrapeAll}
             disabled={bulkScraping}
-            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 transition-all cursor-pointer"
+            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hidden transition-all cursor-pointer"
           >
             <Play className="w-4 h-4 text-white fill-current animate-pulse" />
             Scan All {companies.length} Sites
           </button>
+
+          {bulkScraping && (
+            <button
+              onClick={onStopBulkScrape}
+              className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <StopCircle className="w-4 h-4 text-rose-400" />
+              Stop Scanning
+            </button>
+          )}
         </div>
       </div>
 
@@ -412,8 +423,8 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
                       </div>
                       {company.technologies && company.technologies.length > 0 && (
                         <div className="flex flex-wrap items-center gap-1 mt-2 max-w-sm">
-                          {company.technologies.slice(0, 4).map(tech => (
-                            <span key={tech} className="text-[10px] text-slate-400 bg-[#161B22]/60 px-1.5 py-0.5 rounded-md border border-[#30363d]/30 font-mono">
+                          {company.technologies.slice(0, 4).map((tech, idx) => (
+                            <span key={`${tech}-${idx}`} className="text-[10px] text-slate-400 bg-[#161B22]/60 px-1.5 py-0.5 rounded-md border border-[#30363d]/30 font-mono">
                               {tech}
                             </span>
                           ))}

@@ -1128,7 +1128,7 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
           <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
             {topHiringCompanies.length > 0 ? (
               topHiringCompanies.map((c, idx) => (
-                <div key={c.name} className="flex items-center justify-between bg-[#0A0C10] border border-[#161B22] p-2.5 rounded-xl">
+                <div key={c.id} className="flex items-center justify-between bg-[#0A0C10] border border-[#161B22] p-2.5 rounded-xl">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-md bg-indigo-500/10 text-indigo-400 font-bold text-[10px] flex items-center justify-center border border-indigo-500/20">
                       #{idx + 1}

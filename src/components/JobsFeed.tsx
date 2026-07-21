@@ -5,8 +5,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, MapPin, Briefcase, Calendar, ChevronRight, Sparkles, SlidersHorizontal, Filter, X, Cpu, Zap, RefreshCw, Flame, CheckCircle2 } from 'lucide-react';
-import { Job, Company } from '../types';
+import { Search, MapPin, Briefcase, Calendar, ChevronRight, Sparkles, SlidersHorizontal, Filter, X, Cpu, Zap, RefreshCw, Flame, CheckCircle2, AlertTriangle, AlertCircle, XCircle, ShieldCheck, Check, HelpCircle, Building, ShieldAlert } from 'lucide-react';
+import { Job, Company, validateJob } from '../types';
 
 interface JobsFeedProps {
   jobs: Job[];
@@ -33,6 +33,7 @@ export default function JobsFeed({
   const [salaryFilter, setSalaryFilter] = useState('all');
   const [selectedSkillTag, setSelectedSkillTag] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<string>('newest');
+  const [activeInfoKey, setActiveInfoKey] = useState<string | null>(null);
 
   // Categories mapping for UI badging
   const categoryLabels: Record<string, string> = {
@@ -159,9 +160,9 @@ export default function JobsFeed({
   // Apply filtering rules in memory
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = 
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.skills.some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (job.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.companyName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (job.skills || []).some(s => s.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (job.summary && job.summary.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesCategory = categoryFilter === 'all' || job.category === categoryFilter;
@@ -198,8 +199,18 @@ export default function JobsFeed({
     return weights[level] || 0;
   };
 
+  const isLowConfidence = (job: Job) => {
+    const issues = validateJob(job);
+    return issues.some(issue => issue.type === 'error' || issue.type === 'warning');
+  };
+
   // Apply sorting rules
   const sortedJobs = [...filteredJobs].sort((a, b) => {
+    const aLow = isLowConfidence(a);
+    const bLow = isLowConfidence(b);
+    if (aLow && !bLow) return 1;
+    if (!aLow && bLow) return -1;
+
     if (sortBy === 'newest') {
       return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime();
     } else if (sortBy === 'alphabetical') {
@@ -496,7 +507,36 @@ export default function JobsFeed({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4" id="jobs-grid">
         <AnimatePresence mode="popLayout">
           {sortedJobs.length > 0 ? (
-            sortedJobs.map((job, index) => (
+            sortedJobs.map((job, index) => {
+              const issues = validateJob(job);
+              const errors = issues.filter(i => i.type === 'error');
+              const warnings = issues.filter(i => i.type === 'warning');
+              
+              let auditBadge = null;
+              if (errors.length > 0) {
+                auditBadge = (
+                  <span title={`${errors.length} Critical errors flagged`} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-rose-500 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded flex-shrink-0 font-mono">
+                    <XCircle className="w-2.5 h-2.5" />
+                    Failed ({errors.length})
+                  </span>
+                );
+              } else if (warnings.length > 0) {
+                auditBadge = (
+                  <span title={`${warnings.length} Warnings flagged`} className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded flex-shrink-0 font-mono">
+                    <AlertTriangle className="w-2.5 h-2.5" />
+                    Warning ({warnings.length})
+                  </span>
+                );
+              } else {
+                auditBadge = (
+                  <span title="High fidelity verification passed" className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded flex-shrink-0 font-mono">
+                    <ShieldCheck className="w-2.5 h-2.5" />
+                    Verified
+                  </span>
+                );
+              }
+              
+              return (
               <motion.div
                 key={job.id}
                 layout
@@ -508,15 +548,23 @@ export default function JobsFeed({
                 className="bg-[#0D1117] border border-[#161B22] rounded-2xl hover:border-indigo-500/35 transition-all duration-200 p-5 flex flex-col justify-between cursor-pointer group relative overflow-hidden"
               >
                 {/* Visual Accent */}
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-transparent group-hover:bg-indigo-500 transition-all" />
-
+                <div className={`absolute top-0 left-0 w-1.5 h-full transition-all ${
+                  errors.length > 0 
+                    ? 'bg-rose-500/50 group-hover:bg-rose-500' 
+                    : warnings.length > 0 
+                    ? 'bg-amber-500/50 group-hover:bg-amber-500' 
+                    : 'bg-emerald-500/20 group-hover:bg-emerald-500'
+                }`} />
                 <div>
                   {/* Top Details Row */}
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
-                      <span className="text-xs font-semibold text-slate-400 group-hover:text-indigo-400 transition-colors">
-                        {job.companyName}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-slate-400 group-hover:text-indigo-400 transition-colors">
+                          {job.companyName}
+                        </span>
+                        {auditBadge}
+                      </div>
                       <h3 className="text-base font-semibold text-slate-100 tracking-tight leading-snug group-hover:text-white mt-0.5">
                         {job.title}
                       </h3>
@@ -559,14 +607,14 @@ export default function JobsFeed({
                 <div className="pt-4 border-t border-[#161B22] flex items-center justify-between gap-2 mt-auto">
                   {/* Skill Badges */}
                   <div className="flex flex-wrap gap-1 items-center overflow-hidden max-h-6">
-                    {job.skills.slice(0, 3).map(skill => (
-                      <span key={skill} className="text-[10px] font-mono font-medium text-slate-400 bg-[#0A0C10] px-2 py-0.5 rounded-md border border-[#161B22]">
+                    {(job.skills || []).slice(0, 3).map((skill, idx) => (
+                      <span key={`${skill}-${idx}`} className="text-[10px] font-mono font-medium text-slate-400 bg-[#0A0C10] px-2 py-0.5 rounded-md border border-[#161B22]">
                         {skill}
                       </span>
                     ))}
-                    {job.skills.length > 3 && (
+                    {(job.skills || []).length > 3 && (
                       <span className="text-[9px] text-slate-500 font-bold font-mono px-1">
-                        +{job.skills.length - 3}
+                        +{(job.skills || []).length - 3}
                       </span>
                     )}
                   </div>
@@ -578,14 +626,142 @@ export default function JobsFeed({
                   </span>
                 </div>
               </motion.div>
-            ))
+            )})
           ) : (
-            <div className="md:col-span-2 py-16 text-center text-slate-500 text-sm bg-[#0D1117] border border-[#161B22] rounded-2xl p-8 flex flex-col items-center justify-center">
-              <Briefcase className="w-10 h-10 text-slate-600 mb-2" />
-              <p className="font-semibold text-slate-200">No Job Listings Aggregated</p>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm">
-                Try scanning companies in the directory above to aggregate active job vacancies live from their careers page.
-              </p>
+            <div className="md:col-span-2 bg-[#0D1117] border border-[#161B22] rounded-3xl p-6 sm:p-10 flex flex-col items-center text-center relative overflow-hidden" id="guided-onboarding-launchpad">
+              {/* Background ambient lighting */}
+              <div className="absolute -top-12 -left-12 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="max-w-2xl space-y-6 z-10">
+                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto shadow-inner">
+                  <Cpu className="w-8 h-8 text-indigo-400 animate-pulse" />
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                    Bangladesh Tech Careers Aggregator
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                    Rather than displaying stale, preloaded demo data, this workspace initializes empty for 100% accurate results. To begin aggregating actual active vacancies from local company careers directories, trigger the live scanner below.
+                  </p>
+                </div>
+
+                {/* Info Buttons Grid with Active Expanded Descriptions */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
+                  <div className="flex flex-col border border-[#161B22] bg-[#0A0C10]/60 p-4 rounded-xl transition-all hover:border-[#30363d]/50">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span className="text-xs font-bold text-slate-200">400+ Tech Directories</span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setActiveInfoKey(activeInfoKey === 'directory' ? null : 'directory')}
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                      >
+                        {activeInfoKey === 'directory' ? 'Hide' : 'Info'}
+                      </button>
+                    </div>
+                    {activeInfoKey === 'directory' ? (
+                      <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed border-t border-[#161B22] pt-2">
+                        Our index is populated in real time from the community-driven list of verified software teams, design agencies, and tech employers in Bangladesh.
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 mt-1">Compiled from verified local employer catalogs.</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col border border-[#161B22] bg-[#0A0C10]/60 p-4 rounded-xl transition-all hover:border-[#30363d]/50">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="text-xs font-bold text-slate-200">Multi-Tier Crawler</span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setActiveInfoKey(activeInfoKey === 'scraper' ? null : 'scraper')}
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                      >
+                        {activeInfoKey === 'scraper' ? 'Hide' : 'Info'}
+                      </button>
+                    </div>
+                    {activeInfoKey === 'scraper' ? (
+                      <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed border-t border-[#161B22] pt-2">
+                        The live scraper queries target job portals. It prioritizes semantic <strong>JSON-LD</strong> microdata first, next extracts <strong>Next/Nuxt hydration state</strong> variables, and uses selector heuristics as a final fallback.
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 mt-1">Direct server-side crawler with fallback selector parses.</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col border border-[#161B22] bg-[#0A0C10]/60 p-4 rounded-xl transition-all hover:border-[#30363d]/50">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
+                        <span className="text-xs font-bold text-slate-200">Listing Fidelity Auditing</span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setActiveInfoKey(activeInfoKey === 'auditing' ? null : 'auditing')}
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                      >
+                        {activeInfoKey === 'auditing' ? 'Hide' : 'Info'}
+                      </button>
+                    </div>
+                    {activeInfoKey === 'auditing' ? (
+                      <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed border-t border-[#161B22] pt-2">
+                        To assure extraction fidelity, every single vacancy undergoes automated validation checks for missing descriptions, placeholder links, generic titles, or empty skill mappings.
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 mt-1">Automatic flagging for incomplete or suspicious listings.</p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col border border-[#161B22] bg-[#0A0C10]/60 p-4 rounded-xl transition-all hover:border-[#30363d]/50">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
+                        <span className="text-xs font-bold text-slate-200">Interactive Control Tab</span>
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => setActiveInfoKey(activeInfoKey === 'interactive' ? null : 'interactive')}
+                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                      >
+                        {activeInfoKey === 'interactive' ? 'Hide' : 'Info'}
+                      </button>
+                    </div>
+                    {activeInfoKey === 'interactive' ? (
+                      <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed border-t border-[#161B22] pt-2">
+                        Head over to the <strong>Tech Directory</strong> tab to run highly-targeted crawls of specific individual companies, or view live extraction logs as they stream in.
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 mt-1">Target specific companies for single-employer scans.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions Row */}
+                <div className="pt-6 border-t border-[#161B22] flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onBulkScrape && onBulkScrape(companies, false)}
+                    disabled={bulkScraping}
+                    className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-500/10 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Zap className="w-4 h-4 text-amber-300 animate-pulse" />
+                    Launch Scraper Engine (Fast Scan)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onOpenAddModal}
+                    className="w-full sm:w-auto px-5 py-3 bg-[#161B22] hover:bg-[#21262d] border border-[#30363d] hover:border-slate-500 text-slate-200 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    + Register Manual Listing
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </AnimatePresence>
