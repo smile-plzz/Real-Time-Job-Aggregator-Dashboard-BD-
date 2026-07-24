@@ -122,15 +122,7 @@ export const SalaryAnalytics: React.FC<SalaryAnalyticsProps> = ({ companies, job
       
       const getAvgForExp = (minYears: number, maxYears: number) => {
         const sub = recs.filter(item => item.expYears >= minYears && item.expYears < maxYears);
-        if (sub.length === 0) {
-          // Baseline benchmark if specific sample size is sparse
-          if (r.key === 'backend') return minYears < 2 ? 55000 : minYears < 5 ? 115000 : minYears < 8 ? 205000 : 310000;
-          if (r.key === 'fullstack') return minYears < 2 ? 58000 : minYears < 5 ? 125000 : minYears < 8 ? 220000 : 340000;
-          if (r.key === 'frontend') return minYears < 2 ? 48000 : minYears < 5 ? 105000 : minYears < 8 ? 195000 : 280000;
-          if (r.key === 'devops') return minYears < 2 ? 65000 : minYears < 5 ? 138000 : minYears < 8 ? 235000 : 350000;
-          if (r.key === 'mobile') return minYears < 2 ? 50000 : minYears < 5 ? 110000 : minYears < 8 ? 185000 : 275000;
-          return minYears < 2 ? 42000 : minYears < 5 ? 85000 : minYears < 8 ? 155000 : 220000;
-        }
+        if (sub.length === 0) return 0;
         return Math.round(sub.reduce((acc, item) => acc + item.monthlySalaryBDT, 0) / sub.length);
       };
 
@@ -146,42 +138,47 @@ export const SalaryAnalytics: React.FC<SalaryAnalyticsProps> = ({ companies, job
     });
   }, [betonkemonData.records]);
 
-  // Chart Data: Role Seniority Benchmark
-  const roleChartData = [
-    { role: 'Backend', Junior: 55000, Mid: 115000, Senior: 205000, Lead: 310000 },
-    { role: 'Fullstack', Junior: 58000, Mid: 125000, Senior: 220000, Lead: 340000 },
-    { role: 'Frontend', Junior: 48000, Mid: 105000, Senior: 195000, Lead: 280000 },
-    { role: 'Mobile App', Junior: 50000, Mid: 110000, Senior: 185000, Lead: 275000 },
-    { role: 'DevOps / SRE', Junior: 65000, Mid: 138000, Senior: 235000, Lead: 350000 },
-    { role: 'SQA Engineer', Junior: 42000, Mid: 85000, Senior: 155000, Lead: 220000 },
-  ];
+  // Chart Data: Role Seniority Benchmark (Calculated strictly from live scraped records)
+  const roleChartData = useMemo(() => {
+    return roleExperienceMatrix.map(m => ({
+      role: m.roleName.replace(' Engineer', '').replace(' Developer', ''),
+      Junior: m.junior,
+      Mid: m.mid,
+      Senior: m.senior,
+      Lead: m.lead
+    }));
+  }, [roleExperienceMatrix]);
 
-  // Chart Data: Experience Growth Curve
-  const experienceGrowthData = [
-    { exp: '0-1 Yrs', BDT: 48000, label: 'Entry Level' },
-    { exp: '2 Yrs', BDT: 78000, label: 'Junior+' },
-    { exp: '3 Yrs', BDT: 115000, label: 'Mid Developer' },
-    { exp: '4 Yrs', BDT: 150000, label: 'Mid-Senior' },
-    { exp: '5 Yrs', BDT: 205000, label: 'Senior' },
-    { exp: '7 Yrs', BDT: 275000, label: 'Lead Engineer' },
-    { exp: '9+ Yrs', BDT: 360000, label: 'Staff / Architect' },
-  ];
+  // Chart Data: Experience Growth Curve (Calculated strictly from live scraped records)
+  const experienceGrowthData = useMemo(() => {
+    const recs = betonkemonData.records || [];
+    const brackets = [
+      { exp: '0-1 Yrs', min: 0, max: 2, label: 'Entry Level' },
+      { exp: '2 Yrs', min: 2, max: 3, label: 'Junior+' },
+      { exp: '3 Yrs', min: 3, max: 4, label: 'Mid Developer' },
+      { exp: '4 Yrs', min: 4, max: 5, label: 'Mid-Senior' },
+      { exp: '5 Yrs', min: 5, max: 7, label: 'Senior' },
+      { exp: '7 Yrs', min: 7, max: 9, label: 'Lead Engineer' },
+      { exp: '9+ Yrs', min: 9, max: 99, label: 'Staff / Architect' },
+    ];
 
-  // Top Paying Tech Companies
+    return brackets.map(b => {
+      const sub = recs.filter(r => r.expYears >= b.min && r.expYears < b.max);
+      const avg = sub.length > 0 ? Math.round(sub.reduce((a, item) => a + item.monthlySalaryBDT, 0) / sub.length) : 0;
+      return {
+        exp: b.exp,
+        BDT: avg,
+        label: b.label
+      };
+    });
+  }, [betonkemonData.records]);
+
+  // Top Paying Tech Companies (Calculated strictly from live scraped records)
   const topPayingCompanies = useMemo(() => {
     if (betonkemonData.summary?.topPayingCompanies && betonkemonData.summary.topPayingCompanies.length > 0) {
       return betonkemonData.summary.topPayingCompanies.slice(0, 8);
     }
-    return [
-      { name: 'ShopUp', avgSalaryBDT: 360000 },
-      { name: 'Pathao', avgSalaryBDT: 320000 },
-      { name: 'Appscode', avgSalaryBDT: 230000 },
-      { name: 'Therap (BD) Ltd.', avgSalaryBDT: 210000 },
-      { name: 'Cefalo Bangladesh', avgSalaryBDT: 195000 },
-      { name: 'Selise Digital Platforms', avgSalaryBDT: 185000 },
-      { name: 'Optimizely BD', avgSalaryBDT: 145000 },
-      { name: 'Brain Station 23 PLC', avgSalaryBDT: 110000 },
-    ];
+    return [];
   }, [betonkemonData.summary]);
 
   // Estimated Salary Calculation

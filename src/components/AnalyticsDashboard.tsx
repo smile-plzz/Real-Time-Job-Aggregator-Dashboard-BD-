@@ -517,25 +517,13 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
       }
     });
 
-    const defaultAverages: Record<string, { avg: number; min: number; max: number }> = {
-      frontend: { avg: 65000, min: 40000, max: 110000 },
-      backend: { avg: 75000, min: 45000, max: 130000 },
-      fullstack: { avg: 85000, min: 50000, max: 150000 },
-      mobile: { avg: 72000, min: 45000, max: 120000 },
-      devops: { avg: 90000, min: 55000, max: 160000 },
-      qa: { avg: 48000, min: 30000, max: 80000 },
-      product: { avg: 80000, min: 50000, max: 140000 },
-      design: { avg: 45000, min: 28000, max: 75000 },
-      other: { avg: 55000, min: 35000, max: 90000 }
-    };
-
     return Object.entries(categories).map(([key, data]) => {
       const hasRealData = data.countWithSalary > 0;
-      const average = hasRealData ? Math.round(data.totalSalary / data.countWithSalary) : defaultAverages[key].avg;
-      const min = (hasRealData && data.minSalary !== Infinity) ? data.minSalary : defaultAverages[key].min;
-      const max = (hasRealData && data.maxSalary > 0) ? data.maxSalary : defaultAverages[key].max;
+      const average = hasRealData ? Math.round(data.totalSalary / data.countWithSalary) : 0;
+      const min = (hasRealData && data.minSalary !== Infinity) ? data.minSalary : 0;
+      const max = (hasRealData && data.maxSalary > 0) ? data.maxSalary : 0;
       const totalJobsInCat = data.countWithSalary + data.negotiableCount;
-      const transparentPct = totalJobsInCat > 0 ? Math.round((data.countWithSalary / totalJobsInCat) * 100) : 15;
+      const transparentPct = totalJobsInCat > 0 ? Math.round((data.countWithSalary / totalJobsInCat) * 100) : 0;
 
       return {
         category: key,
@@ -565,41 +553,37 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
         totalWithSalary++;
       }
     });
-    return totalJobsCount > 0 ? Math.round((totalWithSalary / totalJobsCount) * 100) : 25;
+    return totalJobsCount > 0 ? Math.round((totalWithSalary / totalJobsCount) * 100) : 0;
   }, [filteredJobs]);
 
   // Dynamic interactive role-specific salary distribution density curve
   const selectedDistRoleStats = useMemo(() => {
     const matched = roleSalaryComparison.find(r => r.category === distSelectedRole);
-    const defaultAverages: Record<string, { avg: number; min: number; max: number }> = {
-      frontend: { avg: 65000, min: 40000, max: 110000 },
-      backend: { avg: 75000, min: 45000, max: 130000 },
-      fullstack: { avg: 85000, min: 50000, max: 150000 },
-      mobile: { avg: 72000, min: 45000, max: 120000 },
-      devops: { avg: 90000, min: 55000, max: 160000 },
-      qa: { avg: 48000, min: 30000, max: 80000 },
-      product: { avg: 80000, min: 50000, max: 140000 },
-      design: { avg: 45000, min: 28000, max: 75000 },
-      other: { avg: 55000, min: 35000, max: 90000 }
-    };
     
     const stats = matched || {
       category: distSelectedRole,
       name: distSelectedRole === 'qa' ? 'QA & Testing' : distSelectedRole === 'devops' ? 'DevOps' : distSelectedRole === 'fullstack' ? 'Fullstack' : distSelectedRole === 'frontend' ? 'Frontend' : distSelectedRole === 'backend' ? 'Backend' : distSelectedRole === 'mobile' ? 'Mobile Dev' : distSelectedRole.charAt(0).toUpperCase() + distSelectedRole.slice(1),
-      min: defaultAverages[distSelectedRole]?.min || 40000,
-      average: defaultAverages[distSelectedRole]?.avg || 70000,
-      max: defaultAverages[distSelectedRole]?.max || 120000,
+      min: 0,
+      average: 0,
+      max: 0,
       count: 0
     };
 
     const minVal = stats.min;
     const avgVal = stats.average;
     const maxVal = stats.max;
+
+    if (avgVal === 0) {
+      return {
+        stats,
+        curvePoints: []
+      };
+    }
     
-    // Spread the curve beautifully between min - 20k and max + 40k
+    // Spread the curve between min and max
     const start = Math.max(10000, Math.round(minVal * 0.75));
     const end = Math.round(maxVal * 1.25);
-    const step = Math.round((end - start) / 11);
+    const step = Math.round((end - start) / 11) || 5000;
     
     const curvePoints = [];
     const mean = avgVal;
@@ -1914,7 +1898,7 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
                 <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Avg Tech Salary</span>
                   <div className="text-base font-extrabold text-emerald-700 font-mono mt-0.5">
-                    {betonkemonData.summary?.averageSalaryBDT?.toLocaleString() || '152,000'} BDT/mo
+                    {betonkemonData.summary?.averageSalaryBDT ? betonkemonData.summary.averageSalaryBDT.toLocaleString() : '0'} BDT/mo
                   </div>
                   <span className="text-[10px] text-gray-500">Industry Mean</span>
                 </div>
@@ -1922,7 +1906,7 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
                 <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Junior Median</span>
                   <div className="text-base font-extrabold text-sky-700 font-mono mt-0.5">
-                    {betonkemonData.summary?.juniorMedianBDT?.toLocaleString() || '50,000'} BDT/mo
+                    {betonkemonData.summary?.juniorMedianBDT ? betonkemonData.summary.juniorMedianBDT.toLocaleString() : '0'} BDT/mo
                   </div>
                   <span className="text-[10px] text-gray-500">0 - 2 Yrs Exp</span>
                 </div>
@@ -1930,7 +1914,7 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
                 <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mid-Level Median</span>
                   <div className="text-base font-extrabold text-indigo-700 font-mono mt-0.5">
-                    {betonkemonData.summary?.midMedianBDT?.toLocaleString() || '110,000'} BDT/mo
+                    {betonkemonData.summary?.midMedianBDT ? betonkemonData.summary.midMedianBDT.toLocaleString() : '0'} BDT/mo
                   </div>
                   <span className="text-[10px] text-gray-500">2 - 5 Yrs Exp</span>
                 </div>
@@ -1938,7 +1922,7 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
                 <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Senior / Lead Median</span>
                   <div className="text-base font-extrabold text-purple-700 font-mono mt-0.5">
-                    {betonkemonData.summary?.seniorMedianBDT?.toLocaleString() || '210,000'} BDT/mo
+                    {betonkemonData.summary?.seniorMedianBDT ? betonkemonData.summary.seniorMedianBDT.toLocaleString() : '0'} BDT/mo
                   </div>
                   <span className="text-[10px] text-gray-500">5+ Yrs Exp</span>
                 </div>
