@@ -4,7 +4,7 @@
  */
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { Download, Filter, FileJson, FileSpreadsheet, Layers, Building, X } from 'lucide-react';
+import { Download, Filter, FileJson, FileSpreadsheet, Layers, Building, X, BarChart3 } from 'lucide-react';
 import { Company, Job } from '../types';
 
 interface ExportSectionProps {
@@ -13,7 +13,7 @@ interface ExportSectionProps {
 }
 
 export default function ExportSection({ companies, jobs }: ExportSectionProps) {
-  const [exportType, setExportType] = useState<'jobs' | 'companies'>('jobs');
+  const [exportType, setExportType] = useState<'jobs' | 'companies' | 'analytics'>('jobs');
 
   // Filters for jobs
   const [jobExperience, setJobExperience] = useState('all');
@@ -24,7 +24,7 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
   const [companyStatus, setCompanyStatus] = useState('all');
 
   // Handle Export Logic
-  const handleExport = (format: 'csv' | 'json') => {
+  const handleExport = (format: 'csv' | 'json' | 'md') => {
     let exportData: any[] = [];
     let filename = '';
 
@@ -54,7 +54,7 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
         Skills: job.skills.join(', '),
       }));
       filename = `techhub_jobs_export_${new Date().toISOString().split('T')[0]}`;
-    } else {
+    } else if (exportType === 'companies') {
       let filtered = [...companies];
       if (companyStatus !== 'all') {
         if (companyStatus === 'not_scanned') filtered = filtered.filter(c => !c.scrapeStatus || c.scrapeStatus === 'idle');
@@ -75,6 +75,35 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
         JobCount: comp.jobCount || 0,
       }));
       filename = `techhub_companies_export_${new Date().toISOString().split('T')[0]}`;
+    } else if (exportType === 'analytics') {
+      const activeJobs = jobs.filter(j => !j.title.toLowerCase().includes('closed'));
+      exportData = [
+        {
+          Metric: "Total Companies",
+          Value: companies.length
+        },
+        {
+          Metric: "Total Scanned Jobs",
+          Value: jobs.length
+        },
+        {
+          Metric: "Remote Opportunities",
+          Value: activeJobs.filter(j => j.type.toLowerCase().includes('remote') || j.title.toLowerCase().includes('remote')).length
+        },
+        {
+          Metric: "Junior Roles",
+          Value: activeJobs.filter(j => j.experienceLevel === 'junior').length
+        },
+        {
+          Metric: "Mid-Level Roles",
+          Value: activeJobs.filter(j => j.experienceLevel === 'mid').length
+        },
+        {
+          Metric: "Senior/Lead Roles",
+          Value: activeJobs.filter(j => j.experienceLevel === 'senior' || j.experienceLevel === 'lead').length
+        }
+      ];
+      filename = `techhub_market_analytics_${new Date().toISOString().split('T')[0]}`;
     }
 
     if (exportData.length === 0) {
@@ -82,7 +111,35 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
       return;
     }
 
-    if (format === 'json') {
+    if (format === 'md') {
+      let mdContent = '# TechHub BD Export Report\n\n';
+      mdContent += `Generated on: ${new Date().toLocaleDateString()}\n\n`;
+      
+      if (exportType === 'analytics') {
+        mdContent += '## Market Analytics Summary\n\n';
+        exportData.forEach(item => {
+           mdContent += `- **${item.Metric}**: ${item.Value}\n`;
+        });
+      } else {
+        mdContent += `## ${exportType === 'jobs' ? 'Job Listings' : 'Company Directory'}\n\n`;
+        mdContent += `Total Records: ${exportData.length}\n\n`;
+        exportData.forEach((item, index) => {
+          mdContent += `### Record ${index + 1}\n`;
+          Object.entries(item).forEach(([key, val]) => {
+            mdContent += `- **${key}**: ${val}\n`;
+          });
+          mdContent += '\n';
+        });
+      }
+      
+      const blob = new Blob([mdContent], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else if (format === 'json') {
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -145,58 +202,69 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
     <div className="space-y-6" id="export-dashboard-section">
       {/* Header */}
       <div>
-        <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-          <Download className="w-5 h-5 text-indigo-400" />
+        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+          <Download className="w-5 h-5 text-indigo-600" />
           Data Export &amp; Distribution
         </h2>
-        <p className="text-xs text-slate-400 mt-0.5">
+        <p className="text-xs text-gray-600 mt-0.5">
           Generate refined datasets in CSV or JSON formats for external reporting or ATS integrations.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* Left Col: Export Configuration */}
-        <div className="md:col-span-8 bg-[#0D1117] border border-[#161B22] p-5 sm:p-6 rounded-2xl shadow-sm space-y-6">
+        <div className="md:col-span-8 bg-white border border-gray-200 p-5 sm:p-6 rounded-2xl shadow-sm space-y-6">
             
           <div className="flex flex-col sm:flex-row gap-4 mb-2">
              <button
                onClick={() => setExportType('jobs')}
                className={`flex-1 p-4 rounded-xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${
                  exportType === 'jobs' 
-                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' 
-                   : 'bg-[#0A0C10] border-[#161B22] text-slate-400 hover:border-slate-700'
+                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600' 
+                   : 'bg-white border-gray-200 text-gray-600 hover:border-slate-700'
                }`}
              >
-                <Layers className={`w-6 h-6 ${exportType === 'jobs' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                <Layers className={`w-6 h-6 ${exportType === 'jobs' ? 'text-indigo-600' : 'text-gray-500'}`} />
                 <span className="font-semibold text-sm">Export Jobs Database</span>
              </button>
              <button
                onClick={() => setExportType('companies')}
                className={`flex-1 p-4 rounded-xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${
                  exportType === 'companies' 
-                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' 
-                   : 'bg-[#0A0C10] border-[#161B22] text-slate-400 hover:border-slate-700'
+                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600' 
+                   : 'bg-white border-gray-200 text-gray-600 hover:border-slate-700'
                }`}
              >
-                <Building className={`w-6 h-6 ${exportType === 'companies' ? 'text-indigo-400' : 'text-slate-500'}`} />
+                <Building className={`w-6 h-6 ${exportType === 'companies' ? 'text-indigo-600' : 'text-gray-500'}`} />
                 <span className="font-semibold text-sm">Export Company Directory</span>
+             </button>
+             <button
+               onClick={() => setExportType('analytics')}
+               className={`flex-1 p-4 rounded-xl border flex flex-col items-center gap-2 transition-all cursor-pointer ${
+                 exportType === 'analytics' 
+                   ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-600' 
+                   : 'bg-white border-gray-200 text-gray-600 hover:border-slate-700'
+               }`}
+             >
+                <BarChart3 className={`w-6 h-6 ${exportType === 'analytics' ? 'text-indigo-600' : 'text-gray-500'}`} />
+                <span className="font-semibold text-sm">Export Analytics Summary</span>
              </button>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-slate-200 flex items-center gap-2 border-b border-[#161B22] pb-2">
-                <Filter className="w-4 h-4 text-slate-500" />
+            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2 border-b border-gray-200 pb-2">
+                <Filter className="w-4 h-4 text-gray-500" />
                 Refine Dataset
             </h3>
             
             {exportType === 'jobs' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Experience</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">Experience</label>
                         <select
                             value={jobExperience}
                             onChange={(e) => setJobExperience(e.target.value)}
-                            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
                         >
                             <option value="all">All Levels</option>
                             <option value="intern">Intern / Trainee</option>
@@ -207,11 +275,11 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Department</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">Department</label>
                         <select
                             value={jobCategory}
                             onChange={(e) => setJobCategory(e.target.value)}
-                            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
                         >
                             <option value="all">All Departments</option>
                             <option value="frontend">Frontend</option>
@@ -225,11 +293,11 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Work Type</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">Work Type</label>
                         <select
                             value={jobType}
                             onChange={(e) => setJobType(e.target.value)}
-                            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
                         >
                             <option value="all">Any Work Type</option>
                             <option value="remote">Remote Only</option>
@@ -241,11 +309,11 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Scrape Status</label>
+                        <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1.5">Scrape Status</label>
                         <select
                             value={companyStatus}
                             onChange={(e) => setCompanyStatus(e.target.value)}
-                            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
                         >
                             <option value="all">All Statuses</option>
                             <option value="with_jobs">Has Active Jobs</option>
@@ -268,7 +336,7 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
                       setJobType('all');
                       setCompanyStatus('all');
                   }}
-                  className="text-[11px] text-rose-400 hover:text-rose-300 flex items-center gap-1 font-semibold transition cursor-pointer"
+                  className="text-[11px] text-rose-600 hover:text-rose-300 flex items-center gap-1 font-semibold transition cursor-pointer"
                 >
                     <X className="w-3.5 h-3.5" />
                     Clear Filters
@@ -282,13 +350,13 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
         <div className="md:col-span-4 space-y-4">
            <div className="bg-indigo-500/5 border border-indigo-500/15 p-5 rounded-2xl flex flex-col justify-center shadow-sm h-full">
                <div className="mb-6">
-                 <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400 mb-2 block">
+                 <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 mb-2 block">
                     Dataset Snapshot
                  </span>
-                 <div className="text-3xl font-bold text-slate-100 tracking-tight">
-                    {exportType === 'jobs' ? getFilteredJobsCount() : getFilteredCompaniesCount()}
+                 <div className="text-3xl font-bold text-gray-900 tracking-tight">
+                    {exportType === 'jobs' ? getFilteredJobsCount() : (exportType === 'companies' ? getFilteredCompaniesCount() : 6)}
                  </div>
-                 <p className="text-xs text-slate-400 mt-1">
+                 <p className="text-xs text-gray-600 mt-1">
                     Records matched and ready for export
                  </p>
                </div>
@@ -296,19 +364,27 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
                <div className="space-y-3 mt-auto">
                    <button
                      onClick={() => handleExport('csv')}
-                     disabled={(exportType === 'jobs' ? getFilteredJobsCount() : getFilteredCompaniesCount()) === 0}
-                     className="w-full px-4 py-3 bg-[#161B22] hover:bg-[#1f2631] text-slate-200 border border-[#30363d] hover:border-indigo-500/30 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                     disabled={(exportType === 'jobs' ? getFilteredJobsCount() : (exportType === 'companies' ? getFilteredCompaniesCount() : 6)) === 0}
+                     className="w-full px-4 py-3 bg-gray-100 hover:bg-gray-100 text-gray-900 border border-gray-300 hover:border-indigo-500/30 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                    >
-                     <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                     <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
                      Download CSV File
                    </button>
                    <button
                      onClick={() => handleExport('json')}
-                     disabled={(exportType === 'jobs' ? getFilteredJobsCount() : getFilteredCompaniesCount()) === 0}
+                     disabled={(exportType === 'jobs' ? getFilteredJobsCount() : (exportType === 'companies' ? getFilteredCompaniesCount() : 6)) === 0}
                      className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                    >
                      <FileJson className="w-4 h-4 text-amber-400" />
                      Download JSON Payload
+                   </button>
+                   <button
+                     onClick={() => handleExport('md')}
+                     disabled={(exportType === 'jobs' ? getFilteredJobsCount() : (exportType === 'companies' ? getFilteredCompaniesCount() : 6)) === 0}
+                     className="w-full px-4 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                   >
+                     <FileJson className="w-4 h-4 text-purple-400" />
+                     Download Markdown Report
                    </button>
                </div>
            </div>

@@ -84,18 +84,18 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
       {/* Metric Card 1: Total Companies */}
       <motion.div 
         variants={itemVariants}
-        className="bg-[#0D1117] p-5 rounded-2xl border border-[#161B22] shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
+        className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
         id="stat-card-companies"
       >
         <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-slate-500">Total Companies</span>
-          <h3 className="text-3xl font-semibold tracking-tight text-slate-100 mt-1">{stats.totalCompanies}</h3>
-          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-            <Building2 className="w-3.5 h-3.5 text-indigo-400" />
+          <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Total Companies</span>
+          <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">{stats.totalCompanies}</h3>
+          <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+            <Building2 className="w-3.5 h-3.5 text-indigo-600" />
             From Merged Tech Directories
           </p>
         </div>
-        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/10">
+        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 border border-indigo-500/10">
           <Building2 className="w-6 h-6" />
         </div>
       </motion.div>
@@ -103,18 +103,18 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
       {/* Metric Card 2: Total Active Jobs */}
       <motion.div 
         variants={itemVariants}
-        className="bg-[#0D1117] p-5 rounded-2xl border border-[#161B22] shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
+        className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
         id="stat-card-jobs"
       >
         <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-slate-500">Aggregated Jobs</span>
-          <h3 className="text-3xl font-semibold tracking-tight text-slate-100 mt-1">{stats.totalJobs}</h3>
-          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Aggregated Jobs</span>
+          <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">{stats.totalJobs}</h3>
+          <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
             Scraped & Synced Live
           </p>
         </div>
-        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 border border-emerald-500/10">
+        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 border border-emerald-500/10">
           <Briefcase className="w-6 h-6" />
         </div>
       </motion.div>
@@ -122,15 +122,15 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
       {/* Metric Card 3: Scraped Portals */}
       <motion.div 
         variants={itemVariants}
-        className="bg-[#0D1117] p-5 rounded-2xl border border-[#161B22] shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
+        className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
         id="stat-card-scanned"
       >
         <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-slate-500">Portals Scanned</span>
-          <h3 className="text-3xl font-semibold tracking-tight text-slate-100 mt-1">
-            {stats.scrapedCompanies} <span className="text-lg text-slate-500 font-normal">/ {stats.totalCompanies}</span>
+          <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Portals Scanned</span>
+          <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">
+            {stats.scrapedCompanies} <span className="text-lg text-gray-500 font-normal">/ {stats.totalCompanies}</span>
           </h3>
-          <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
+          <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5 text-violet-400" />
             Active Sources: {stats.activeCompaniesCount}
           </p>
@@ -143,29 +143,29 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
       {/* Metric Card 4: Top Demand Category */}
       <motion.div 
         variants={itemVariants}
-        className="bg-[#0D1117] p-5 rounded-2xl border border-[#161B22] shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
+        className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
         id="stat-card-demand"
       >
         <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-slate-500">Highest Demand</span>
-          <h3 className="text-xl font-semibold tracking-tight text-slate-100 mt-2 truncate max-w-[170px]" title={topCategory}>
+          <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Highest Demand</span>
+          <h3 className="text-xl font-semibold tracking-tight text-gray-900 mt-2 truncate max-w-[170px]" title={topCategory}>
             {topCategory}
           </h3>
           <div className="mt-2 flex items-center justify-between">
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-gray-600">
               {maxCategoryCount > 0 ? `${maxCategoryCount} positions active` : 'No jobs loaded'}
             </p>
             <button 
               onClick={onReset}
               disabled={isResetting}
-              className="text-xs text-rose-400 hover:text-rose-300 hover:underline flex items-center gap-1 ml-2 font-medium"
+              className="text-xs text-rose-600 hover:text-rose-300 hover:underline flex items-center gap-1 ml-2 font-medium"
               title="Reset aggregated jobs to seed data"
             >
               Reset Cache
             </button>
           </div>
         </div>
-        <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400 border border-amber-500/10">
+        <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 border border-amber-500/10">
           <BarChart2 className="w-6 h-6" />
         </div>
       </motion.div>
@@ -173,10 +173,10 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
       {/* Custom Handcrafted Distribution Visualizers */}
       <motion.div 
         variants={itemVariants}
-        className="md:col-span-2 bg-[#0D1117] p-5 rounded-2xl border border-[#161B22] shadow-xs"
+        className="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs"
         id="category-distribution"
       >
-        <h4 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-1.5">
+        <h4 className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
           Job Breakdown by Category
         </h4>
@@ -188,10 +188,10 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
             return (
               <div key={key} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-300 font-medium">{categoryLabels[key]}</span>
-                  <span className="text-slate-500 font-mono">{count} ({percentage}%)</span>
+                  <span className="text-gray-800 font-medium">{categoryLabels[key]}</span>
+                  <span className="text-gray-500 font-mono">{count} ({percentage}%)</span>
                 </div>
-                <div className="h-2 bg-[#161B22] rounded-full overflow-hidden">
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}
@@ -207,10 +207,10 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
 
       <motion.div 
         variants={itemVariants}
-        className="md:col-span-2 bg-[#0D1117] p-5 rounded-2xl border border-[#161B22] shadow-xs"
+        className="md:col-span-2 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs"
         id="experience-distribution"
       >
-        <h4 className="text-xs font-mono uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-1.5">
+        <h4 className="text-xs font-mono uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
           Job Breakdown by Experience Level
         </h4>
@@ -222,10 +222,10 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
             return (
               <div key={key} className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-300 font-medium">{experienceLabels[key]}</span>
-                  <span className="text-slate-500 font-mono">{count} ({percentage}%)</span>
+                  <span className="text-gray-800 font-medium">{experienceLabels[key]}</span>
+                  <span className="text-gray-500 font-mono">{count} ({percentage}%)</span>
                 </div>
-                <div className="h-2 bg-[#161B22] rounded-full overflow-hidden">
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${percentage}%` }}

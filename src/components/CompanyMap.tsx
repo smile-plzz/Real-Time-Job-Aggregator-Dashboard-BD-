@@ -186,24 +186,24 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
   };
 
   return (
-    <div className="bg-[#0A0C10] border border-[#161B22] rounded-xl overflow-hidden shadow-lg h-[600px] flex flex-col relative" id="interactive-cluster-map">
-      <div className="p-4 border-b border-[#161B22] flex flex-col xl:flex-row xl:items-center justify-between bg-[#11161D] gap-4">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg h-[600px] flex flex-col relative" id="interactive-cluster-map">
+      <div className="p-4 border-b border-gray-200 flex flex-col xl:flex-row xl:items-center justify-between bg-gray-50 gap-4">
         <div>
-          <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-            <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
             Interactive Dhaka Tech Cluster Map
           </h3>
-          <p className="text-[10px] text-slate-500 mt-0.5">Explore geographical job hubs, filter tech stacks, and track your local alignment.</p>
+          <p className="text-[10px] text-gray-500 mt-0.5">Explore geographical job hubs, filter tech stacks, and track your local alignment.</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-3">
           {/* Company Search/Zoom Dropdown */}
-          <div className="flex items-center gap-2 bg-[#070A0F] border border-[#161B22] px-3 py-1.5 rounded-lg">
-            <Search className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
+            <Search className="w-3.5 h-3.5 text-gray-500" />
             <select
               value={selectedCompanyId}
               onChange={(e) => handleSelectCompanyChange(e.target.value)}
-              className="bg-transparent text-xs text-slate-300 focus:outline-none w-36"
+              className="bg-transparent text-xs text-gray-800 focus:outline-none w-36"
             >
               <option value="">Zoom to Company...</option>
               {markers.map(m => (
@@ -215,12 +215,12 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
           </div>
 
           {/* Tech Stack filter */}
-          <div className="flex items-center gap-2 bg-[#070A0F] border border-[#161B22] px-3 py-1.5 rounded-lg">
-            <Filter className="w-3.5 h-3.5 text-slate-500" />
+          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
+            <Filter className="w-3.5 h-3.5 text-gray-500" />
             <select
               value={filterTech}
               onChange={(e) => setFilterTech(e.target.value)}
-              className="bg-transparent text-xs text-slate-300 focus:outline-none w-32"
+              className="bg-transparent text-xs text-gray-800 focus:outline-none w-32"
             >
               <option value="all">All Techs</option>
               {allTechs.map(tech => (
@@ -229,28 +229,28 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
             </select>
           </div>
           
-          <label className="flex items-center gap-2 bg-[#070A0F] border border-[#161B22] px-3 py-1.5 rounded-lg cursor-pointer hover:bg-[#161B22]/50 transition-colors">
+          <label className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-100/50 transition-colors">
             <input 
               type="checkbox" 
               checked={filterActiveJobs}
               onChange={(e) => setFilterActiveJobs(e.target.checked)}
-              className="rounded border-slate-600 bg-[#0A0C10] text-indigo-500 focus:ring-indigo-500/30 w-3.5 h-3.5"
+              className="rounded border-slate-600 bg-white text-indigo-500 focus:ring-indigo-500/30 w-3.5 h-3.5"
             />
-            <span className="text-xs text-slate-300 font-medium">Hiring Only</span>
+            <span className="text-xs text-gray-800 font-medium">Hiring Only</span>
           </label>
 
           {/* Locate Me Trigger */}
           <button
             onClick={handleLocateUser}
             disabled={locating}
-            className="flex items-center gap-1.5 bg-[#1a1f26] border border-[#30363d] text-xs text-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-800 hover:text-white transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 bg-white border border-gray-300 text-xs text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-all disabled:opacity-50"
             title="Locate my position in Dhaka tech hub"
           >
             <Compass className={`w-3.5 h-3.5 text-sky-400 ${locating ? 'animate-spin' : ''}`} />
             <span>{locating ? 'Locating...' : 'Locate Me'}</span>
           </button>
 
-          <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2.5 py-1.5 rounded font-mono border border-indigo-500/20">
+          <span className="text-[10px] bg-indigo-500/10 text-indigo-600 px-2.5 py-1.5 rounded font-mono border border-indigo-500/20">
             {markers.length} Plotted
           </span>
         </div>
@@ -308,7 +308,7 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
 
                   {marker.company.technologies && marker.company.technologies.length > 0 && (
                     <div className="mt-2.5 pt-2 border-t border-slate-100">
-                      <p className="text-[9px] text-slate-400 font-semibold mb-1 uppercase tracking-wider">Primary Stack</p>
+                      <p className="text-[9px] text-gray-600 font-semibold mb-1 uppercase tracking-wider">Primary Stack</p>
                       <div className="flex flex-wrap gap-1">
                         {marker.company.technologies.slice(0, 4).map((t, idx) => (
                           <span key={`${t}-${idx}`} className="bg-indigo-50/80 border border-indigo-100 text-indigo-700 text-[9px] px-1.5 py-0.5 rounded-sm font-semibold">
@@ -316,7 +316,7 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
                           </span>
                         ))}
                         {marker.company.technologies.length > 4 && (
-                          <span className="bg-slate-50 border border-slate-200 text-slate-500 text-[9px] px-1.5 py-0.5 rounded-sm font-semibold">
+                          <span className="bg-slate-50 border border-slate-200 text-gray-500 text-[9px] px-1.5 py-0.5 rounded-sm font-semibold">
                             +{marker.company.technologies.length - 4}
                           </span>
                         )}
@@ -330,8 +330,8 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
         </MapContainer>
         
         {/* Floating Quick Legend */}
-        <div className="absolute bottom-4 left-4 z-[1000] bg-[#0D1117]/90 backdrop-blur-md border border-[#161B22] p-2.5 rounded-xl text-[10px] text-slate-400 space-y-1.5 shadow-xl max-w-[160px]">
-          <p className="font-bold text-slate-300 uppercase tracking-wider text-[9px] border-b border-[#161B22] pb-1 mb-1">Map Node Legend</p>
+        <div className="absolute bottom-4 left-4 z-[1000] bg-white/90 backdrop-blur-md border border-gray-200 p-2.5 rounded-xl text-[10px] text-gray-600 space-y-1.5 shadow-xl max-w-[160px]">
+          <p className="font-bold text-gray-800 uppercase tracking-wider text-[9px] border-b border-gray-200 pb-1 mb-1">Map Node Legend</p>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_#10b981]" style={{ display: 'inline-block' }}></span>
             <span>Hiring Active Partner</span>

@@ -1017,8 +1017,16 @@ const isGenuineJobTitle = (title: string, link: string): boolean => {
   // 4. Link-based validation
   if (link) {
     const l = link.toLowerCase();
-    const nonJobLinkKeywords = ['/services', '/about', '/contact', '/portfolio', '/blog', '/pricing', '/privacy', '/terms', '#contact', '#about'];
+    const nonJobLinkKeywords = [
+      '/services', '/about', '/contact', '/portfolio', '/blog', '/pricing', '/privacy', '/terms', '#contact', '#about',
+      'linkedin.com/search', 'linkedin.com/company', 'facebook.com', 'twitter.com', 'instagram.com', 'youtube.com'
+    ];
     if (nonJobLinkKeywords.some(kw => l.includes(kw))) {
+      return false;
+    }
+    
+    // If it's a linkedin link but not a job link, reject it.
+    if (l.includes('linkedin.com') && !l.includes('/jobs/')) {
       return false;
     }
   }

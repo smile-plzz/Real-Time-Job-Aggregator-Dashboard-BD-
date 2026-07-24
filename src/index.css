@@ -8,10 +8,8 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: #0A0C10;
-  color: #E2E8F0;
-  background-image: radial-gradient(#1f2937 1px, transparent 1px);
-  background-size: 32px 32px;
+  background-color: #FAFAFA;
+  color: #111827;
 }
 
 /* Custom Scrollbar */
@@ -21,14 +19,14 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0A0C10;
+  background: #FAFAFA;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F2937;
+  background: #E5E7EB;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #D1D5DB;
 }

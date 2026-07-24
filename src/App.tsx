@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, RefreshCw, Layers, Cpu, AlertCircle, Trash2, Building, AlertTriangle, BarChart3, BookOpen, Download } from 'lucide-react';
+import { Activity,  Sparkles, RefreshCw, Layers, Cpu, AlertCircle, Trash2, Building, AlertTriangle, BarChart3, BookOpen, Download  } from 'lucide-react';
 
 import { Company, Job, ScrapeStats } from './types';
 import StatsSection from './components/StatsSection';
@@ -14,6 +14,7 @@ import JobsFeed from './components/JobsFeed';
 import JobDetailModal from './components/JobDetailModal';
 // No manual listing imports needed
 import AnalyticsDashboard from './components/AnalyticsDashboard';
+import MarketPulse from './components/MarketPulse';
 import CrawlerDocs from './components/CrawlerDocs';
 import ExportSection from './components/ExportSection';
 
@@ -232,22 +233,22 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen text-[#E2E8F0] flex flex-col justify-between relative" id="applet-container">
+    <div className="min-h-screen text-gray-900 flex flex-col justify-between relative" id="applet-container">
       {/* Top Header Navigation Panel */}
-      <header className="bg-[#0A0C10]/95 backdrop-blur-xl text-white border-b border-[#161B22] sticky top-0 z-40 py-5 px-6 shrink-0 shadow-sm" id="main-header">
+      <header className="bg-white/95 backdrop-blur-xl text-gray-900 border-b border-gray-200 sticky top-0 z-40 py-5 px-6 shrink-0 shadow-sm" id="main-header">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.1)]">
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/10 border border-indigo-500/20 text-indigo-600 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.1)]">
               <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-slate-100">
+              <h1 className="text-xl font-bold tracking-tight flex items-center gap-2 text-gray-900">
                 TechHub BD Intelligence
-                <span className="text-[9px] uppercase tracking-wider font-mono bg-indigo-500/10 text-indigo-400 px-2.5 py-0.5 rounded-full border border-indigo-500/20 font-semibold">
+                <span className="text-[9px] uppercase tracking-wider font-mono bg-indigo-500/10 text-indigo-600 px-2.5 py-0.5 rounded-full border border-indigo-500/20 font-semibold">
                   Live Engine
                 </span>
               </h1>
-              <p className="text-xs text-slate-400 mt-0.5 font-medium">
+              <p className="text-xs text-gray-600 mt-0.5 font-medium">
                 Real-Time Career Aggregator & Company Directory
               </p>
             </div>
@@ -256,7 +257,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => fetchAllData()}
-              className="px-3.5 py-2.5 bg-[#0D1117] hover:bg-[#161B22] text-slate-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-[#161B22] hover:border-[#30363d] shadow-sm"
+              className="px-3.5 py-2.5 bg-white hover:bg-gray-100 text-gray-800 hover:text-gray-900 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-gray-200 hover:border-gray-300 shadow-sm"
               title="Refresh dashboard"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -266,7 +267,7 @@ export default function App() {
             <button
               onClick={handleResetCache}
               disabled={resetting}
-              className="px-3.5 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="px-3.5 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               title="Wipe scraped jobs and reset to seed listings"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -279,60 +280,71 @@ export default function App() {
       {/* Main Container Core Layout */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full" id="main-content">
         {/* Tab Selection Switcher */}
-        <div className="flex border-b border-[#161B22] mb-8 overflow-x-auto whitespace-nowrap scrollbar-none gap-2" id="dashboard-tab-navigation">
+        <div className="flex border-b border-gray-200 mb-8 overflow-x-auto whitespace-nowrap scrollbar-none gap-2" id="dashboard-tab-navigation">
           <button
             onClick={() => setActiveTab('jobs')}
             className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'jobs'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
+                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
             }`}
           >
-            <Layers className={`w-4 h-4 ${activeTab === 'jobs' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            <Layers className={`w-4 h-4 ${activeTab === 'jobs' ? 'text-indigo-600' : 'text-gray-500'}`} />
             Active Jobs
           </button>
           <button
             onClick={() => setActiveTab('directory')}
             className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'directory'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
+                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
             }`}
           >
-            <Building className={`w-4 h-4 ${activeTab === 'directory' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            <Building className={`w-4 h-4 ${activeTab === 'directory' ? 'text-indigo-600' : 'text-gray-500'}`} />
             Tech Directory
           </button>
           <button
             onClick={() => setActiveTab('analytics')}
             className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'analytics'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
+                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
             }`}
           >
-            <BarChart3 className={`w-4 h-4 ${activeTab === 'analytics' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            <BarChart3 className={`w-4 h-4 ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-gray-500'}`} />
             Market Analytics
+          </button>
+          <button
+            onClick={() => setActiveTab('pulse')}
+            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+              activeTab === 'pulse'
+                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
+            }`}
+          >
+            <Activity className={`w-4 h-4 ${activeTab === 'pulse' ? 'text-indigo-600' : 'text-gray-500'}`} />
+            Market Pulse
           </button>
           <button
             onClick={() => setActiveTab('docs')}
             className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'docs'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
+                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
             }`}
           >
-            <BookOpen className={`w-4 h-4 ${activeTab === 'docs' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            <BookOpen className={`w-4 h-4 ${activeTab === 'docs' ? 'text-indigo-600' : 'text-gray-500'}`} />
             System Architecture
           </button>
           <button
             onClick={() => setActiveTab('export')}
             className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'export'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-800/30 rounded-t-lg'
+                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
             }`}
           >
-            <Download className={`w-4 h-4 ${activeTab === 'export' ? 'text-indigo-400' : 'text-slate-500'}`} />
+            <Download className={`w-4 h-4 ${activeTab === 'export' ? 'text-indigo-600' : 'text-gray-500'}`} />
             Export Data
           </button>
         </div>
@@ -341,8 +353,8 @@ export default function App() {
         {loading && (
           <div className="py-24 text-center flex flex-col items-center justify-center" id="global-loader">
             <RefreshCw className="w-10 h-10 text-indigo-500 animate-spin mb-3" />
-            <p className="font-semibold text-slate-200">Loading Dashboard Records...</p>
-            <p className="text-xs text-slate-500 mt-1">Retrieving companies and active listings from database cache</p>
+            <p className="font-semibold text-gray-900">Loading Dashboard Records...</p>
+            <p className="text-xs text-gray-500 mt-1">Retrieving companies and active listings from database cache</p>
           </div>
         )}
 
@@ -414,6 +426,17 @@ export default function App() {
                   />
                 </motion.div>
               )}
+            {activeTab === 'pulse' && (
+              <motion.div
+                key="pulse"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <MarketPulse jobs={jobs} companies={companies} />
+              </motion.div>
+            )}
 
               {activeTab === 'docs' && (
                 <motion.div
@@ -447,13 +470,13 @@ export default function App() {
       </main>
 
       {/* Footer Navigation Credits Panel */}
-      <footer className="bg-[#0A0C10] border-t border-[#161B22] py-8 mt-12 text-center text-xs text-slate-500 relative z-10" id="main-footer">
+      <footer className="bg-white border-t border-gray-200 py-8 mt-12 text-center text-xs text-gray-500 relative z-10" id="main-footer">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="font-medium text-slate-400">
+          <p className="font-medium text-gray-600">
             TechHub BD &mdash; High-Fidelity Heuristic Crawler Engine & Directory
           </p>
           <div className="flex items-center gap-4">
-            <p className="font-mono text-[10px] text-slate-500">
+            <p className="font-mono text-[10px] text-gray-500">
               Aggregating from MBSTUPC & JustApply
             </p>
           </div>
@@ -469,10 +492,10 @@ export default function App() {
             exit={{ opacity: 0, y: 24, scale: 0.95 }}
             className={`fixed bottom-6 right-6 z-50 p-4 rounded-xl shadow-xl border text-xs font-semibold flex items-center gap-2 max-w-sm ${
               notification.type === 'success'
-                ? 'bg-[#0D1117] text-emerald-400 border-emerald-500/30'
+                ? 'bg-white text-emerald-600 border-emerald-500/30'
                 : notification.type === 'error'
-                ? 'bg-[#0D1117] text-rose-400 border-rose-500/30'
-                : 'bg-[#0D1117] text-indigo-400 border-indigo-500/30'
+                ? 'bg-white text-rose-600 border-rose-500/30'
+                : 'bg-white text-indigo-600 border-indigo-500/30'
             }`}
           >
             <AlertCircle className={`w-4.5 h-4.5 ${

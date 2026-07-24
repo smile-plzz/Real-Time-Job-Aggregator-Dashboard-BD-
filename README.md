@@ -6,64 +6,51 @@
 ![Vite](https://img.shields.io/badge/vite-6.2-646CFF.svg?logo=vite)
 ![TypeScript](https://img.shields.io/badge/typescript-5.8-3178C6.svg?logo=typescript)
 
-An elegant, real-time full-stack job board and career aggregator specializing in **Bangladesh Technology & Software Engineering Companies**. It live-scrapes job directories, sanitizes metadata, parses structured inputs, normalizes roles, and generates deep market analytics, wrapped in a beautiful **Dark Cosmic** UI theme.
+An elegant, real-time full-stack job board and career aggregator specializing in **Bangladesh Technology & Software Engineering Companies**. It live-scrapes job directories, sanitizes metadata, parses structured inputs, normalizes roles, and generates deep market analytics with predictive AI forecasting, wrapped in a clean, high-contrast visual design.
 
 ---
 
 ## ✨ Features
 
 - **Real-Time Job Aggregation**: Live scraping of 150+ Bangladesh tech companies with native support for the **BDTechJobs** pipeline.
-- **Geospatial Intelligence Map**: Enhanced Leaflet-powered map supporting real-time user geolocation tracking, custom neon marker nodes, smooth camera animations ("flyTo"), and an interactive geocoder to instantly select and zoom to company coordinates.
-- **Enriched Market Analytics Dashboard**: Added deep cross-perspective analysis of salary trends by experience level alongside a breakdown of global joint venture origins and primary target market countries (USA, Japan, UK, Nordics, etc.).
-- **Dark Cosmic UI**: High-contrast, typography-focused dark mode design with subtle gradients, interactive motion, and grid layouts.
-- **Dual Directory Merging**: Merges data from JustApply and MBSTUPC directories on the fly.
-- **Advanced Filtering**: Filter by experience level, role category, company, salary band, and specific tech skills.
+- **Recently Posted & Scraped Sorting**: Instant sorting of jobs by `Recently Scraped / Posted First`, `Oldest First`, `Highest Compensation`, `Senior Roles`, and `Title (A-Z)` with one-click quick pills.
+- **Predictive Hiring Trend Model**: Area & Line chart forecasting quarterly job demand into 2026 across Fullstack, Backend, Frontend, DevOps, and AI/Data engineering disciplines.
+- **Live Market Telemetry & Pulse**: Real-time statistics computing job category donuts, technical skill frequency bar charts, experience level radar charts, and top employer vacancy rankings.
+- **Geospatial Intelligence Map**: Enhanced Leaflet-powered map supporting real-time user geolocation tracking, custom marker nodes, smooth camera animations ("flyTo"), and an interactive geocoder to locate tech hubs in Dhaka.
+- **Enriched Market Analytics Dashboard**: Selective role and department filters, salary density curves, experience vs compensation benchmarks, and joint venture international origin breakdowns (USA, Japan, UK, Switzerland, Nordics).
+- **Dual Directory Merging**: Live fetches, normalizes, and synthesizes developer directories from JustApply (`badhon495`) and MBSTUPC (`MBSTUPC`).
+- **Advanced Filtering**: Filter by experience level, role category, company, work pattern (On-site, Hybrid, 100% Remote), salary band, and technology stack tags.
 
 ---
 
 ## 🚀 Key Architectural Features
 
-### 1. Multi-Tier High-Fidelity Scraping Pipeline
-To parse live listings from highly non-standard corporate sites, the aggregator processes targets using three hierarchical **Precision Tiers**:
+### 1. Predictive Hiring Demand Forecasting Model
+Evaluates live scraped listings and historical quarterly volume to generate predictive trendlines projecting upcoming tech demand in Bangladesh through 2026. Includes discipline filters for Fullstack, Backend, Frontend, Cloud/DevOps, and AI & Data Science.
+
+### 2. Multi-Tier High-Fidelity Scraping Pipeline
+To parse live listings from corporate sites, the aggregator processes targets using three hierarchical **Precision Tiers**:
 *   **Tier 1: Schema.org JSON-LD (Precision: ~100%)**
     Traverses document headers searching for standardized JSON-LD `<script type="application/ld+json">` blobs defining `JobPosting` objects.
 *   **Tier 2: State Hydration Parsing (Precision: ~90%)**
     Harvests pre-rendered React, Next, or Nuxt JSON states (such as `__NEXT_DATA__` or dynamic states) embedded in script elements before DOM hydration occurs.
 *   **Tier 3: Heuristic Selector Engine (Precision: ~80%)**
-    Analyzes body trees, parent densities, and anchor links to extract titles, descriptions, and direct URLs.
-
-### 2. Multi-Path Directory Probing
-When direct crawls return no results, the engine fires a parallel probe pipeline:
-1.  **Alternative Career Link Discovery**: Inspects primary page anchor elements for labels matching `/careers`, `/career-hub`, etc.
-2.  **Domain Root Suffix Scanning**: Dynamically falls back to standard suffixes (`/career`, `/careers`, `/jobs`, `/vacancies`) on the origin host.
+    Analyzes body trees, parent densities, and anchor links to extract titles, descriptions, and direct URLs with strict validation guards.
 
 ### 3. Dual Directory Source Synthesis
-To build the most comprehensive mapping of the Bangladeshi tech scene, the engine synthesizes two primary developer directories:
-*   **Just Apply Directory**: Live fetched from the `badhon495/just-apply` data repository. Includes core contact emails, HR recruiter contacts, and registered websites.
-*   **MBSTUPC Directory**: Live crawled and parsed from the `MBSTUPC/tech-companies-in-bangladesh` AsciiDoc database. Provides team size metadata, social media links, and primary technology stacks.
+Synthesizes two primary developer directories on the fly:
+*   **Just Apply Directory**: Live fetched from the `badhon495/just-apply` repository. Includes recruiter emails, direct website links, and career portals.
+*   **MBSTUPC Directory**: Live crawled from the `MBSTUPC/tech-companies-in-bangladesh` database. Provides team size metadata, social profile links, and primary technology stacks.
 
 ---
 
-## 🛠️ Defenses & Network Error Resolution
-The crawler has been hardened with defenses to withstand common corporate server crashes and DNS anomalies:
-1.  **Obsolete & Defunct Host Redirector**: Automatically redirects defunct, offline, or obsolete recruitment platforms to active career portals.
-2.  **Network Resolution Guard**: Intercepts and handles system-level connection errors gracefully (e.g., `getaddrinfo ENOTFOUND`, `UND_ERR_CONNECT_TIMEOUT`).
-3.  **Extended Scraper Timeout Grace**: Timeout limits have been expanded to tolerate slow Bangladesh shared-hosting career servers.
-4.  **Graceful SSL/TLS Bypass**: Bypasses expired certificates securely inside the container environment.
-5.  **Punctuation-Split URLs**: Semicolon and comma-separated directories are auto-split, trimmed, and parsed defensively.
-
----
-
-## 📊 Rich Market Perspectives & Salary Analytics
-The app includes an **Advanced Analytics Dashboard** featuring live-processed statistical metrics:
-*   **Geospatial Intelligence Map**: Visualizing company distributions, user proximity alignment, and tech clusters across Dhaka.
-*   **Global Partner & Origins breakdown**: Analyzes the international joint venture affiliations and primary market alignments of local tech companies (USA, Japan, UK, Switzerland, Nordics, etc.).
-*   **Market Vitality Index**: Real-time evaluation of job density across the Dhaka tech ecosystem.
-*   **Tech Spec Intensity**: Metrics tracking average programming skills and frameworks specified per role.
-*   **Flexibility Quotient**: Dynamic percentage representing the prevalence of Remote and Hybrid schedules.
-*   **Salary Analytics**: Dynamic minimum, average, and maximum monthly compensation charts.
-*   **Double-Axis Role vs Experience Matrix**: High-fidelity comparative breakdown tracking wage trajectories (Junior vs Mid vs Senior vs Lead) across key professional roles like Frontend, Backend, DevOps, and Fullstack.
-*   **Strategic Market Narrative Panels**: Expert summaries discussing technology saturation, geographic centralization (Gulshan, Banani, Mirpur), and salary transparency.
+## 📊 Market Intelligence & Predictive Analytics
+The **Advanced Analytics Dashboard** features:
+*   **Predictive Hiring Trend Chart**: Interactive forecasting area chart mapping hiring volume by quarter and domain.
+*   **Market Telemetry & Radar**: Experience distribution radar, technical stack demand, and top hiring employers.
+*   **Geospatial Hub Map**: Interactive geographic clustering across Gulshan, Banani, Mirpur, Dhanmondi, and Uttara.
+*   **Global Partner & Origins Breakdown**: Analyzes international joint ventures (Japan, USA, Switzerland, Nordics, UK, South Korea).
+*   **Salary Estimator & Density Curves**: Bell curve salary distributions and custom compensation calculators (BDT).
 
 ---
 

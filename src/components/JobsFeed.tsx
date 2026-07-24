@@ -49,14 +49,14 @@ export default function JobsFeed({
 
   const categoryColors: Record<string, string> = {
     frontend: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    backend: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    backend: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
     fullstack: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
-    mobile: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    devops: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
-    qa: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
-    product: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
+    mobile: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    devops: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
+    qa: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
+    product: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20',
     design: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20',
-    other: 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+    other: 'bg-slate-500/10 text-gray-600 border-slate-500/20'
   };
 
   const experienceLabels: Record<string, string> = {
@@ -70,11 +70,11 @@ export default function JobsFeed({
 
   const experienceColors: Record<string, string> = {
     intern: 'bg-teal-500/10 text-teal-400 border-teal-500/20',
-    junior: 'bg-[#161B22] text-slate-300 border-slate-700/50',
+    junior: 'bg-gray-100 text-gray-800 border-slate-700/50',
     mid: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
     senior: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
     lead: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-    unspecified: 'bg-[#161B22] text-slate-500 border-slate-800'
+    unspecified: 'bg-gray-100 text-gray-500 border-slate-800'
   };
 
   // Get unique companies from active jobs
@@ -214,6 +214,8 @@ export default function JobsFeed({
 
     if (sortBy === 'newest') {
       return new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime();
+    } else if (sortBy === 'oldest') {
+      return new Date(a.dateAdded).getTime() - new Date(b.dateAdded).getTime();
     } else if (sortBy === 'alphabetical') {
       return a.title.localeCompare(b.title);
     } else if (sortBy === 'salary-desc') {
@@ -253,31 +255,65 @@ export default function JobsFeed({
       {/* Feed Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-400 fill-indigo-500/20" />
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-indigo-600 fill-indigo-500/20" />
             Consolidated Aggregated Jobs Feed
           </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-gray-600 mt-0.5">
             Real-time scraped openings from active company careers. Updated live.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 text-xs">
+            <button
+              onClick={() => setSortBy('newest')}
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                sortBy === 'newest'
+                  ? 'bg-white text-indigo-600 shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              ⚡ Recently Posted
+            </button>
+            <button
+              onClick={() => setSortBy('salary-desc')}
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                sortBy === 'salary-desc'
+                  ? 'bg-white text-indigo-600 shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              💰 High Salary
+            </button>
+            <button
+              onClick={() => setSortBy('experience-desc')}
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                sortBy === 'experience-desc'
+                  ? 'bg-white text-indigo-600 shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              👑 Senior Roles
+            </button>
+          </div>
+
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 bg-[#0D1117] border border-[#161B22] rounded-xl text-xs font-semibold text-slate-300 focus:outline-hidden focus:border-indigo-500 cursor-pointer"
+            className="px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-semibold text-gray-800 focus:outline-hidden focus:border-indigo-500 cursor-pointer shadow-xs"
           >
-            <option value="newest">Newest First</option>
-            <option value="alphabetical">Job Title A-Z</option>
-            <option value="salary-desc">Highest Salary (Est.)</option>
-            <option value="experience-desc">Senior &amp; Lead First</option>
+            <option value="newest">⚡ Recently Scraped / Posted First</option>
+            <option value="oldest">📅 Oldest Listings First</option>
+            <option value="alphabetical">🔤 Job Title (A-Z)</option>
+            <option value="salary-desc">💰 Highest Compensation First</option>
+            <option value="experience-desc">👑 Senior &amp; Lead Positions First</option>
           </select>
         </div>
       </div>
 
       {/* Live Scraper Panel */}
-      <div className="bg-[#0D1117] border border-[#161B22] p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative overflow-hidden" id="jobs-scraper-panel">
+      <div className="bg-white border border-gray-200 p-5 rounded-2xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative overflow-hidden" id="jobs-scraper-panel">
         {/* Decorative ambient gradient */}
         <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
         
@@ -287,12 +323,12 @@ export default function JobsFeed({
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${bulkScraping ? 'bg-indigo-400' : 'bg-emerald-400'}`}></span>
               <span className={`relative inline-flex rounded-full h-2 w-2 ${bulkScraping ? 'bg-indigo-500' : 'bg-emerald-500'}`}></span>
             </span>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-              <Cpu className="w-3.5 h-3.5 text-indigo-400 animate-pulse" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-1.5">
+              <Cpu className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
               Dynamic Career Scraper Controller
             </h3>
           </div>
-          <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+          <p className="text-xs text-gray-600 max-w-2xl leading-relaxed">
             {bulkScraping 
               ? "Running career board crawls across the directory. Finding new vacancies using structural selectors and multi-path heuristics..." 
               : "Scan company directories to aggregate active vacancies live from their actual careers pages using deep parsing."}
@@ -301,21 +337,21 @@ export default function JobsFeed({
           {/* List current company scanning, if any */}
           {bulkScraping ? (
             <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-              <span className="text-[10px] text-slate-500 font-mono">Current Activity:</span>
+              <span className="text-[10px] text-gray-500 font-mono">Current Activity:</span>
               {companies.filter(c => c.scrapeStatus === 'scraping').slice(0, 3).map(c => (
-                <span key={c.name} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 animate-pulse">
-                  <RefreshCw className="w-2.5 h-2.5 animate-spin text-indigo-400" />
+                <span key={c.name} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 animate-pulse">
+                  <RefreshCw className="w-2.5 h-2.5 animate-spin text-indigo-600" />
                   Crawling {c.name}
                 </span>
               ))}
               {companies.filter(c => c.scrapeStatus === 'scraping').length > 3 && (
-                <span className="text-[10px] font-mono text-slate-500 px-1">
+                <span className="text-[10px] font-mono text-gray-500 px-1">
                   +{companies.filter(c => c.scrapeStatus === 'scraping').length - 3} more
                 </span>
               )}
             </div>
           ) : (
-            <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1.5 pt-1">
+            <div className="text-[10px] text-gray-500 font-mono flex items-center gap-1.5 pt-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500/80" />
               <span>Scraper Engine Idle. Ready to audit <strong>{companies.length} Bangladesh Tech Companies</strong> directories.</span>
             </div>
@@ -328,11 +364,11 @@ export default function JobsFeed({
             disabled={bulkScraping}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
               bulkScraping 
-                ? 'bg-[#161B22]/50 border-[#161B22] text-slate-500 cursor-not-allowed'
-                : 'bg-[#161B22] hover:bg-[#21262d] text-slate-100 border-[#30363d] shadow-sm hover:border-slate-500'
+                ? 'bg-gray-100/50 border-gray-200 text-gray-500 cursor-not-allowed'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 shadow-sm hover:border-slate-500'
             }`}
           >
-            <Zap className={`w-3.5 h-3.5 text-amber-400 ${bulkScraping ? 'opacity-40' : 'animate-bounce'}`} />
+            <Zap className={`w-3.5 h-3.5 text-amber-600 ${bulkScraping ? 'opacity-40' : 'animate-bounce'}`} />
             Scan All (Fast)
           </button>
 
@@ -341,7 +377,7 @@ export default function JobsFeed({
             disabled={bulkScraping}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
               bulkScraping 
-                ? 'bg-[#161B22]/50 border-[#161B22] text-slate-500 cursor-not-allowed'
+                ? 'bg-gray-100/50 border-gray-200 text-gray-500 cursor-not-allowed'
                 : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white border-indigo-500/30 shadow-md shadow-indigo-900/20'
             }`}
           >
@@ -352,14 +388,14 @@ export default function JobsFeed({
       </div>
 
       {/* Advanced Filtering Control Panel */}
-      <div className="bg-[#0D1117] p-5 rounded-2xl border border-[#161B22] shadow-xs space-y-4" id="jobs-filters-panel">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider">
+      <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4" id="jobs-filters-panel">
+        <div className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider">
           <span className="flex items-center gap-2">
             <SlidersHorizontal className="w-3.5 h-3.5" />
             Advanced Filter Toolkit
           </span>
           {isFiltersActive && (
-            <span className="text-[10px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold normal-case">
+            <span className="text-[10px] text-indigo-600 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-full font-bold normal-case">
               {filteredJobs.length} matches filtered
             </span>
           )}
@@ -369,13 +405,13 @@ export default function JobsFeed({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7 gap-3">
           {/* Keyword Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
               type="text"
               placeholder="Search title, skills..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs placeholder-slate-500 text-slate-200 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-xl text-xs placeholder-slate-500 text-gray-900 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 transition-all"
             />
           </div>
 
@@ -383,7 +419,7 @@ export default function JobsFeed({
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
           >
             <option value="all">All Departments / Roles</option>
             {Object.entries(categoryLabels).map(([key, value]) => (
@@ -395,7 +431,7 @@ export default function JobsFeed({
           <select
             value={experienceFilter}
             onChange={(e) => setExperienceFilter(e.target.value)}
-            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
           >
             <option value="all">All Experience Levels</option>
             {Object.entries(experienceLabels).map(([key, value]) => (
@@ -407,7 +443,7 @@ export default function JobsFeed({
           <select
             value={companyFilter}
             onChange={(e) => setCompanyFilter(e.target.value)}
-            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
           >
             <option value="all">All Companies ({companiesList.length})</option>
             {companiesList.map(c => (
@@ -419,7 +455,7 @@ export default function JobsFeed({
           <select
             value={jobTypeFilter}
             onChange={(e) => setJobTypeFilter(e.target.value)}
-            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
           >
             <option value="all">All Work Types</option>
             <option value="fulltime">Full-time Roles</option>
@@ -432,7 +468,7 @@ export default function JobsFeed({
           <select
             value={salaryFilter}
             onChange={(e) => setSalaryFilter(e.target.value)}
-            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all"
           >
             <option value="all">All Salary Levels</option>
             <option value="high">High Budget (BDT 100K+)</option>
@@ -445,7 +481,7 @@ export default function JobsFeed({
           <select
             value={sourceFilter}
             onChange={(e) => setSourceFilter(e.target.value)}
-            className="w-full px-3 py-2 bg-[#0A0C10] border border-[#161B22] rounded-xl text-xs text-slate-300 focus:outline-hidden focus:border-indigo-500 focus:bg-[#161B22]/40 cursor-pointer transition-all animate-fade-in"
+            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-hidden focus:border-indigo-500 focus:bg-gray-100/40 cursor-pointer transition-all animate-fade-in"
           >
             <option value="all">All Sources</option>
             <option value="heuristics">Direct Scrapes</option>
@@ -455,8 +491,8 @@ export default function JobsFeed({
 
         {/* Tactical Quick-Search Trending Skill Badges */}
         {popularTechSkills.length > 0 && (
-          <div className="pt-2 border-t border-[#161B22]/50 flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none" id="jobs-skills-quickfilter">
-            <span className="text-[10px] text-slate-500 font-semibold tracking-wider uppercase shrink-0">
+          <div className="pt-2 border-t border-gray-200/50 flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none" id="jobs-skills-quickfilter">
+            <span className="text-[10px] text-gray-500 font-semibold tracking-wider uppercase shrink-0">
               Hot Tech stacks:
             </span>
             <div className="flex items-center gap-1.5">
@@ -468,13 +504,13 @@ export default function JobsFeed({
                     onClick={() => setSelectedSkillTag(isSelected ? null : tech.name)}
                     className={`text-[10px] font-mono px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
                       isSelected
-                        ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500'
-                        : 'bg-[#0A0C10] text-slate-400 border-[#161B22] hover:border-slate-700 hover:text-slate-200'
+                        ? 'bg-indigo-500/20 text-indigo-600 border-indigo-500'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-slate-700 hover:text-gray-900'
                     }`}
                   >
                     <span>{tech.name}</span>
                     <span className={`text-[8px] font-bold px-1 rounded-sm ${
-                      isSelected ? 'bg-indigo-500/35 text-indigo-300' : 'bg-[#161B22] text-slate-500'
+                      isSelected ? 'bg-indigo-500/35 text-indigo-300' : 'bg-gray-100 text-gray-500'
                     }`}>
                       {tech.count}
                     </span>
@@ -487,20 +523,20 @@ export default function JobsFeed({
 
         {/* Clear Filter Toolbar */}
         {isFiltersActive && (
-          <div className="flex items-center justify-between mt-2 pt-3 border-t border-[#161B22]" id="active-filters-toolbar">
+          <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-200" id="active-filters-toolbar">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-500 flex items-center gap-1">
+              <span className="text-xs text-gray-500 flex items-center gap-1">
                 <Filter className="w-3 h-3" />
                 Active filters on
               </span>
-              <span className="text-[10px] bg-[#161B22] text-slate-300 border border-[#30363d] px-2.5 py-0.5 rounded-full font-semibold">
+              <span className="text-[10px] bg-gray-100 text-gray-800 border border-gray-300 px-2.5 py-0.5 rounded-full font-semibold">
                 {sortedJobs.length} match{sortedJobs.length !== 1 ? 'es' : ''} found
               </span>
             </div>
             
             <button
               onClick={handleClearFilters}
-              className="text-xs font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 cursor-pointer"
+              className="text-xs font-semibold text-rose-600 hover:text-rose-300 flex items-center gap-1 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               Reset All Filters
@@ -551,7 +587,7 @@ export default function JobsFeed({
                 exit={{ opacity: 0, scale: 0.98, y: -8 }}
                 transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.2) }}
                 onClick={() => onSelectJob(job)}
-                className="bg-[#0D1117] border border-[#161B22] rounded-2xl hover:border-indigo-500/35 transition-all duration-200 p-5 flex flex-col justify-between cursor-pointer group relative overflow-hidden"
+                className="bg-white border border-gray-200 rounded-2xl hover:border-indigo-500/35 transition-all duration-200 p-5 flex flex-col justify-between cursor-pointer group relative overflow-hidden"
               >
                 {/* Visual Accent */}
                 <div className={`absolute top-0 left-0 w-1.5 h-full transition-all ${
@@ -566,33 +602,33 @@ export default function JobsFeed({
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div>
                       <div className="flex items-center flex-wrap gap-2">
-                        <span className="text-xs font-semibold text-slate-400 group-hover:text-indigo-400 transition-colors">
+                        <span className="text-xs font-semibold text-gray-600 group-hover:text-indigo-600 transition-colors">
                           {job.companyName}
                         </span>
                         {job.source && (
                           <span className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded font-mono ${
                             job.source.toLowerCase() === 'bd tech jobs' || job.source.toLowerCase() === 'bdtechjobs'
-                              ? 'text-cyan-400 bg-cyan-500/10 border border-cyan-500/20'
-                              : 'text-slate-400 bg-slate-500/10 border border-slate-500/20'
+                              ? 'text-cyan-600 bg-cyan-500/10 border border-cyan-500/20'
+                              : 'text-gray-600 bg-slate-500/10 border border-slate-500/20'
                           }`}>
                             {job.source}
                           </span>
                         )}
                         {auditBadge}
                       </div>
-                      <h3 className="text-base font-semibold text-slate-100 tracking-tight leading-snug group-hover:text-white mt-0.5">
+                      <h3 className="text-base font-semibold text-gray-900 tracking-tight leading-snug group-hover:text-indigo-600 mt-0.5">
                         {job.title}
                       </h3>
                     </div>
 
-                    <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1 self-start whitespace-nowrap bg-[#0A0C10] border border-[#161B22] px-2 py-0.5 rounded-full">
-                      <Calendar className="w-3 h-3 text-slate-500" />
+                    <span className="text-[10px] text-gray-600 font-mono flex items-center gap-1 self-start whitespace-nowrap bg-white border border-gray-200 px-2 py-0.5 rounded-full">
+                      <Calendar className="w-3 h-3 text-gray-500" />
                       {formatTimeAgo(job.dateAdded)}
                     </span>
                   </div>
 
                   {/* Summary / Description */}
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed mb-4">
+                  <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed mb-4">
                     {job.summary || "No description loaded."}
                   </p>
 
@@ -606,36 +642,36 @@ export default function JobsFeed({
                       {experienceLabels[job.experienceLevel]}
                     </span>
 
-                    <span className="text-[10px] font-semibold text-slate-300 bg-[#161B22] border border-[#30363d] px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                      <Briefcase className="w-3 h-3 text-slate-500" />
+                    <span className="text-[10px] font-semibold text-gray-800 bg-gray-100 border border-gray-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Briefcase className="w-3 h-3 text-gray-500" />
                       {job.type}
                     </span>
 
-                    <span className="text-[10px] font-semibold text-slate-300 bg-[#161B22] border border-[#30363d] px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-slate-500" />
+                    <span className="text-[10px] font-semibold text-gray-800 bg-gray-100 border border-gray-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-gray-500" />
                       {job.location}
                     </span>
                   </div>
                 </div>
 
                 {/* Footer Section with Skills and CTA */}
-                <div className="pt-4 border-t border-[#161B22] flex items-center justify-between gap-2 mt-auto">
+                <div className="pt-4 border-t border-gray-200 flex items-center justify-between gap-2 mt-auto">
                   {/* Skill Badges */}
                   <div className="flex flex-wrap gap-1 items-center overflow-hidden max-h-6">
                     {(job.skills || []).slice(0, 3).map((skill, idx) => (
-                      <span key={`${skill}-${idx}`} className="text-[10px] font-mono font-medium text-slate-400 bg-[#0A0C10] px-2 py-0.5 rounded-md border border-[#161B22]">
+                      <span key={`${skill}-${idx}`} className="text-[10px] font-mono font-medium text-gray-600 bg-white px-2 py-0.5 rounded-md border border-gray-200">
                         {skill}
                       </span>
                     ))}
                     {(job.skills || []).length > 3 && (
-                      <span className="text-[9px] text-slate-500 font-bold font-mono px-1">
+                      <span className="text-[9px] text-gray-500 font-bold font-mono px-1">
                         +{(job.skills || []).length - 3}
                       </span>
                     )}
                   </div>
 
                   {/* Apply / Navigate CTA */}
-                  <span className="text-xs font-semibold text-slate-400 group-hover:text-indigo-400 flex items-center gap-0.5 transition-colors shrink-0">
+                  <span className="text-xs font-semibold text-gray-600 group-hover:text-indigo-600 flex items-center gap-0.5 transition-colors shrink-0">
                     Details
                     <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                   </span>
@@ -643,122 +679,122 @@ export default function JobsFeed({
               </motion.div>
             )})
           ) : (
-            <div className="md:col-span-2 bg-[#0D1117] border border-[#161B22] rounded-3xl p-6 sm:p-10 flex flex-col items-center text-center relative overflow-hidden" id="guided-onboarding-launchpad">
+            <div className="md:col-span-2 bg-white border border-gray-200 rounded-3xl p-6 sm:p-10 flex flex-col items-center text-center relative overflow-hidden" id="guided-onboarding-launchpad">
               {/* Background ambient lighting */}
               <div className="absolute -top-12 -left-12 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
 
               <div className="max-w-2xl space-y-6 z-10">
-                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto shadow-inner">
-                  <Cpu className="w-8 h-8 text-indigo-400 animate-pulse" />
+                <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 flex items-center justify-center mx-auto shadow-inner">
+                  <Cpu className="w-8 h-8 text-indigo-600 animate-pulse" />
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">
+                  <h3 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
                     Bangladesh Tech Careers Aggregator
                   </h3>
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                     Rather than displaying stale, preloaded demo data, this workspace initializes empty for 100% accurate results. To begin aggregating actual active vacancies from local company careers directories, trigger the live scanner below.
                   </p>
                 </div>
 
                 {/* Info Buttons Grid with Active Expanded Descriptions */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-left">
-                  <div className="flex flex-col border border-[#161B22] bg-[#0A0C10]/60 p-4 rounded-xl transition-all hover:border-[#30363d]/50">
+                  <div className="flex flex-col border border-gray-200 bg-white/60 p-4 rounded-xl transition-all hover:border-gray-300/50">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <Building className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <span className="text-xs font-bold text-slate-200">400+ Tech Directories</span>
+                        <Building className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="text-xs font-bold text-gray-900">400+ Tech Directories</span>
                       </div>
                       <button 
                         type="button"
                         onClick={() => setActiveInfoKey(activeInfoKey === 'directory' ? null : 'directory')}
-                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                        className="text-[10px] text-indigo-600 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                       >
                         {activeInfoKey === 'directory' ? 'Hide' : 'Info'}
                       </button>
                     </div>
                     {activeInfoKey === 'directory' ? (
-                      <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed border-t border-[#161B22] pt-2">
+                      <p className="text-[11px] text-gray-600 mt-2.5 leading-relaxed border-t border-gray-200 pt-2">
                         Our index is populated in real time from the community-driven list of verified software teams, design agencies, and tech employers in Bangladesh.
                       </p>
                     ) : (
-                      <p className="text-[11px] text-slate-500 mt-1">Compiled from verified local employer catalogs.</p>
+                      <p className="text-[11px] text-gray-500 mt-1">Compiled from verified local employer catalogs.</p>
                     )}
                   </div>
 
-                  <div className="flex flex-col border border-[#161B22] bg-[#0A0C10]/60 p-4 rounded-xl transition-all hover:border-[#30363d]/50">
+                  <div className="flex flex-col border border-gray-200 bg-white/60 p-4 rounded-xl transition-all hover:border-gray-300/50">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span className="text-xs font-bold text-slate-200">Multi-Tier Crawler</span>
+                        <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span className="text-xs font-bold text-gray-900">Multi-Tier Crawler</span>
                       </div>
                       <button 
                         type="button"
                         onClick={() => setActiveInfoKey(activeInfoKey === 'scraper' ? null : 'scraper')}
-                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                        className="text-[10px] text-indigo-600 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                       >
                         {activeInfoKey === 'scraper' ? 'Hide' : 'Info'}
                       </button>
                     </div>
                     {activeInfoKey === 'scraper' ? (
-                      <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed border-t border-[#161B22] pt-2">
+                      <p className="text-[11px] text-gray-600 mt-2.5 leading-relaxed border-t border-gray-200 pt-2">
                         The live scraper queries target job portals. It prioritizes semantic <strong>JSON-LD</strong> microdata first, next extracts <strong>Next/Nuxt hydration state</strong> variables, and uses selector heuristics as a final fallback.
                       </p>
                     ) : (
-                      <p className="text-[11px] text-slate-500 mt-1">Direct server-side crawler with fallback selector parses.</p>
+                      <p className="text-[11px] text-gray-500 mt-1">Direct server-side crawler with fallback selector parses.</p>
                     )}
                   </div>
 
-                  <div className="flex flex-col border border-[#161B22] bg-[#0A0C10]/60 p-4 rounded-xl transition-all hover:border-[#30363d]/50">
+                  <div className="flex flex-col border border-gray-200 bg-white/60 p-4 rounded-xl transition-all hover:border-gray-300/50">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-                        <span className="text-xs font-bold text-slate-200">Listing Fidelity Auditing</span>
+                        <ShieldAlert className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span className="text-xs font-bold text-gray-900">Listing Fidelity Auditing</span>
                       </div>
                       <button 
                         type="button"
                         onClick={() => setActiveInfoKey(activeInfoKey === 'auditing' ? null : 'auditing')}
-                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                        className="text-[10px] text-indigo-600 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                       >
                         {activeInfoKey === 'auditing' ? 'Hide' : 'Info'}
                       </button>
                     </div>
                     {activeInfoKey === 'auditing' ? (
-                      <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed border-t border-[#161B22] pt-2">
+                      <p className="text-[11px] text-gray-600 mt-2.5 leading-relaxed border-t border-gray-200 pt-2">
                         To assure extraction fidelity, every single vacancy undergoes automated validation checks for missing descriptions, placeholder links, generic titles, or empty skill mappings.
                       </p>
                     ) : (
-                      <p className="text-[11px] text-slate-500 mt-1">Automatic flagging for incomplete or suspicious listings.</p>
+                      <p className="text-[11px] text-gray-500 mt-1">Automatic flagging for incomplete or suspicious listings.</p>
                     )}
                   </div>
 
-                  <div className="flex flex-col border border-[#161B22] bg-[#0A0C10]/60 p-4 rounded-xl transition-all hover:border-[#30363d]/50">
+                  <div className="flex flex-col border border-gray-200 bg-white/60 p-4 rounded-xl transition-all hover:border-gray-300/50">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-indigo-400 shrink-0" />
-                        <span className="text-xs font-bold text-slate-200">Interactive Control Tab</span>
+                        <Sparkles className="w-4 h-4 text-indigo-600 shrink-0" />
+                        <span className="text-xs font-bold text-gray-900">Interactive Control Tab</span>
                       </div>
                       <button 
                         type="button"
                         onClick={() => setActiveInfoKey(activeInfoKey === 'interactive' ? null : 'interactive')}
-                        className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
+                        className="text-[10px] text-indigo-600 hover:text-indigo-300 font-bold bg-indigo-500/10 hover:bg-indigo-500/20 px-2 py-0.5 rounded cursor-pointer transition-colors whitespace-nowrap"
                       >
                         {activeInfoKey === 'interactive' ? 'Hide' : 'Info'}
                       </button>
                     </div>
                     {activeInfoKey === 'interactive' ? (
-                      <p className="text-[11px] text-slate-400 mt-2.5 leading-relaxed border-t border-[#161B22] pt-2">
+                      <p className="text-[11px] text-gray-600 mt-2.5 leading-relaxed border-t border-gray-200 pt-2">
                         Head over to the <strong>Tech Directory</strong> tab to run highly-targeted crawls of specific individual companies, or view live extraction logs as they stream in.
                       </p>
                     ) : (
-                      <p className="text-[11px] text-slate-500 mt-1">Target specific companies for single-employer scans.</p>
+                      <p className="text-[11px] text-gray-500 mt-1">Target specific companies for single-employer scans.</p>
                     )}
                   </div>
                 </div>
 
                 {/* Actions Row */}
-                <div className="pt-6 border-t border-[#161B22] flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div className="pt-6 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
                     type="button"
                     onClick={() => onBulkScrape && onBulkScrape(companies, false)}
