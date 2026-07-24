@@ -18,7 +18,7 @@ An elegant, real-time full-stack job board and career aggregator specializing in
 - **Live Market Telemetry & Pulse**: Real-time statistics computing job category donuts, technical skill frequency bar charts, experience level radar charts, and top employer vacancy rankings.
 - **Geospatial Intelligence Map**: Enhanced Leaflet-powered map supporting real-time user geolocation tracking, custom marker nodes, smooth camera animations ("flyTo"), and an interactive geocoder to locate tech hubs in Dhaka.
 - **Enriched Market Analytics Dashboard**: Selective role and department filters, salary density curves, experience vs compensation benchmarks, and joint venture international origin breakdowns (USA, Japan, UK, Switzerland, Nordics).
-- **Dual Directory Merging**: Live fetches, normalizes, and synthesizes developer directories from JustApply (`badhon495`) and MBSTUPC (`MBSTUPC`).
+- **Triple Directory Merging**: Live fetches, normalizes, and synthesizes developer directories from JustApply (`badhon495`), MBSTUPC (`MBSTUPC`), and Bangladesh Yellow Pages (`Computer_software_solution`).
 - **Advanced Filtering**: Filter by experience level, role category, company, work pattern (On-site, Hybrid, 100% Remote), salary band, and technology stack tags.
 
 ---
@@ -37,10 +37,11 @@ To parse live listings from corporate sites, the aggregator processes targets us
 *   **Tier 3: Heuristic Selector Engine (Precision: ~80%)**
     Analyzes body trees, parent densities, and anchor links to extract titles, descriptions, and direct URLs with strict validation guards.
 
-### 3. Dual Directory Source Synthesis
-Synthesizes two primary developer directories on the fly:
+### 3. Triple Directory Source Synthesis
+Synthesizes three primary developer directories on the fly:
 *   **Just Apply Directory**: Live fetched from the `badhon495/just-apply` repository. Includes recruiter emails, direct website links, and career portals.
 *   **MBSTUPC Directory**: Live crawled from the `MBSTUPC/tech-companies-in-bangladesh` database. Provides team size metadata, social profile links, and primary technology stacks.
+*   **Bangladesh Yellow Pages**: Live parsed from the `Computer_software_solution` category directory. Adds verified office phone numbers, Banani/Uttara/Khilkhet office addresses, and software solution classifications.
 
 ---
 

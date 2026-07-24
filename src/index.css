@@ -30,3 +30,27 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #D1D5DB;
 }
+
+/* Fix Leaflet stacking context so controls, panes and popups do not float over headers or outside container when scrolling */
+.leaflet-container {
+  z-index: 1 !important;
+  isolation: isolate;
+  position: relative;
+  overflow: hidden !important;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+}
+
+.leaflet-pane {
+  z-index: 5 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control {
+  z-index: 10 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 15 !important;
+}

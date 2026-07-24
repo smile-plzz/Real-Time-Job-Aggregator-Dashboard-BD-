@@ -61,6 +61,7 @@ const MapController: React.FC<MapControllerProps> = ({ center, zoom }) => {
 interface CompanyMapProps {
   companies: Company[];
   jobs: Job[];
+  hideHeaderTitle?: boolean;
 }
 
 const getApproximateCoords = (location: string, companyName: string): [number, number] => {
@@ -88,7 +89,7 @@ const getApproximateCoords = (location: string, companyName: string): [number, n
   return [baseLat + jitterLat, baseLng + jitterLng];
 };
 
-export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
+export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs, hideHeaderTitle = false }) => {
   const [filterActiveJobs, setFilterActiveJobs] = useState(false);
   const [filterTech, setFilterTech] = useState<string>('all');
   
@@ -186,24 +187,26 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-lg h-[600px] flex flex-col relative" id="interactive-cluster-map">
-      <div className="p-4 border-b border-gray-200 flex flex-col xl:flex-row xl:items-center justify-between bg-gray-50 gap-4">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <svg className="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            Interactive Dhaka Tech Cluster Map
-          </h3>
-          <p className="text-[10px] text-gray-500 mt-0.5">Explore geographical job hubs, filter tech stacks, and track your local alignment.</p>
-        </div>
+    <div className={`bg-white relative overflow-hidden isolate z-0 w-full ${hideHeaderTitle ? 'rounded-b-2xl' : 'border border-gray-200 rounded-2xl shadow-sm'} h-[540px] flex flex-col`} id="interactive-cluster-map">
+      <div className="p-3 sm:p-4 border-b border-gray-200 flex flex-col xl:flex-row xl:items-center justify-between bg-gray-50/90 gap-3">
+        {!hideHeaderTitle && (
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-emerald-600" />
+              Interactive Dhaka Tech Cluster Map
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">Explore geographical job hubs, filter tech stacks, and track your local alignment.</p>
+          </div>
+        )}
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className={`flex flex-wrap items-center gap-2.5 ${hideHeaderTitle ? 'w-full justify-between sm:justify-end' : ''}`}>
           {/* Company Search/Zoom Dropdown */}
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
-            <Search className="w-3.5 h-3.5 text-gray-500" />
+          <div className="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+            <Search className="w-3.5 h-3.5 text-gray-400" />
             <select
               value={selectedCompanyId}
               onChange={(e) => handleSelectCompanyChange(e.target.value)}
-              className="bg-transparent text-xs text-gray-800 focus:outline-none w-36"
+              className="bg-transparent text-xs text-gray-800 focus:outline-none w-36 cursor-pointer"
             >
               <option value="">Zoom to Company...</option>
               {markers.map(m => (
@@ -215,12 +218,12 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
           </div>
 
           {/* Tech Stack filter */}
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
-            <Filter className="w-3.5 h-3.5 text-gray-500" />
+          <div className="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg shadow-2xs">
+            <Filter className="w-3.5 h-3.5 text-gray-400" />
             <select
               value={filterTech}
               onChange={(e) => setFilterTech(e.target.value)}
-              className="bg-transparent text-xs text-gray-800 focus:outline-none w-32"
+              className="bg-transparent text-xs text-gray-800 focus:outline-none w-28 cursor-pointer"
             >
               <option value="all">All Techs</option>
               {allTechs.map(tech => (
@@ -229,34 +232,34 @@ export const CompanyMap: React.FC<CompanyMapProps> = ({ companies, jobs }) => {
             </select>
           </div>
           
-          <label className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-100/50 transition-colors">
+          <label className="flex items-center gap-1.5 bg-white border border-gray-200 px-2.5 py-1.5 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors shadow-2xs">
             <input 
               type="checkbox" 
               checked={filterActiveJobs}
               onChange={(e) => setFilterActiveJobs(e.target.checked)}
-              className="rounded border-slate-600 bg-white text-indigo-500 focus:ring-indigo-500/30 w-3.5 h-3.5"
+              className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500/30 w-3.5 h-3.5 cursor-pointer"
             />
-            <span className="text-xs text-gray-800 font-medium">Hiring Only</span>
+            <span className="text-xs text-gray-700 font-medium">Hiring Only</span>
           </label>
 
           {/* Locate Me Trigger */}
           <button
             onClick={handleLocateUser}
             disabled={locating}
-            className="flex items-center gap-1.5 bg-white border border-gray-300 text-xs text-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 bg-white border border-gray-200 text-xs text-gray-700 px-2.5 py-1.5 rounded-lg hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300 transition-all disabled:opacity-50 cursor-pointer shadow-2xs"
             title="Locate my position in Dhaka tech hub"
           >
-            <Compass className={`w-3.5 h-3.5 text-sky-400 ${locating ? 'animate-spin' : ''}`} />
+            <Compass className={`w-3.5 h-3.5 text-sky-500 ${locating ? 'animate-spin' : ''}`} />
             <span>{locating ? 'Locating...' : 'Locate Me'}</span>
           </button>
 
-          <span className="text-[10px] bg-indigo-500/10 text-indigo-600 px-2.5 py-1.5 rounded font-mono border border-indigo-500/20">
+          <div className="bg-emerald-50 border border-emerald-200/80 px-2.5 py-1 rounded-md text-[11px] font-semibold text-emerald-700 font-mono">
             {markers.length} Plotted
-          </span>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 relative">
+      <div className="flex-1 relative overflow-hidden isolate z-0 w-full h-full">
         <MapContainer center={[23.7925, 90.4078]} zoom={12} style={{ height: '100%', width: '100%' }}>
           <TileLayer
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

@@ -24,7 +24,11 @@ import {
   Sliders, 
   Zap,
   Info,
-  Banknote
+  Banknote,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import { CompanyMap } from './CompanyMap';
 
@@ -43,7 +47,63 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // --- Salary Tabs State ---
-  const [activeSalaryTab, setActiveSalaryTab] = useState<'roles' | 'experience' | 'estimator' | 'distribution'>('roles');
+  const [activeSalaryTab, setActiveSalaryTab] = useState<'roles' | 'experience' | 'estimator' | 'distribution' | 'betonkemon'>('betonkemon');
+
+  // --- Betonkemon ("বেতন কেমন?") Live Salary State ---
+  const [betonkemonData, setBetonkemonData] = useState<{ records: any[]; summary: any; lastUpdated?: string }>({ records: [], summary: null });
+  const [betonkemonSearch, setBetonkemonSearch] = useState<string>('');
+  const [betonkemonLevelFilter, setBetonkemonLevelFilter] = useState<string>('all');
+  const [isRefreshingBetonkemon, setIsRefreshingBetonkemon] = useState<boolean>(false);
+  const [betonkemonPage, setBetonkemonPage] = useState<number>(1);
+  const [betonkemonPerPage, setBetonkemonPerPage] = useState<number>(20);
+
+  React.useEffect(() => {
+    setBetonkemonPage(1);
+  }, [betonkemonSearch, betonkemonLevelFilter, betonkemonPerPage]);
+
+  const filteredBetonkemonRecords = useMemo(() => {
+    return (betonkemonData.records || []).filter(r => {
+      const matchesSearch = !betonkemonSearch || 
+        r.company.toLowerCase().includes(betonkemonSearch.toLowerCase()) ||
+        r.role.toLowerCase().includes(betonkemonSearch.toLowerCase()) ||
+        (r.techStack || []).some((t: string) => t.toLowerCase().includes(betonkemonSearch.toLowerCase()));
+      const matchesLevel = betonkemonLevelFilter === 'all' || r.level.toLowerCase().includes(betonkemonLevelFilter.toLowerCase());
+      return matchesSearch && matchesLevel;
+    });
+  }, [betonkemonData.records, betonkemonSearch, betonkemonLevelFilter]);
+
+  const totalBetonkemonPages = Math.ceil(filteredBetonkemonRecords.length / betonkemonPerPage) || 1;
+
+  const paginatedBetonkemonRecords = useMemo(() => {
+    const startIdx = (betonkemonPage - 1) * betonkemonPerPage;
+    return filteredBetonkemonRecords.slice(startIdx, startIdx + betonkemonPerPage);
+  }, [filteredBetonkemonRecords, betonkemonPage, betonkemonPerPage]);
+
+  React.useEffect(() => {
+    fetch('/api/betonkemon-salaries')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.records) {
+          setBetonkemonData(data);
+        }
+      })
+      .catch(err => console.error('Failed to load Betonkemon data:', err));
+  }, []);
+
+  const handleRefreshBetonkemon = async () => {
+    setIsRefreshingBetonkemon(true);
+    try {
+      const res = await fetch('/api/scrape-betonkemon', { method: 'POST' });
+      const json = await res.json();
+      if (json && json.data) {
+        setBetonkemonData(json.data);
+      }
+    } catch (e) {
+      console.error('Error refreshing Betonkemon records:', e);
+    } finally {
+      setIsRefreshingBetonkemon(false);
+    }
+  };
 
   // --- Salary Estimator Tool State ---
   const [estimateRole, setEstimateRole] = useState<string>('fullstack');
@@ -868,27 +928,31 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
         </p>
       </div>
 
-      {/* Interactive Map Toggle */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-white border border-gray-200 rounded-xl p-4 shadow-sm gap-4">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-emerald-600" />
-            Geospatial Intelligence Map
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">Explore company distributions and tech clusters across Dhaka.</p>
+      {/* Geospatial Intelligence Map Panel */}
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm relative isolate z-0" id="geospatial-map-section">
+        <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border-b border-gray-100">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-emerald-600" />
+              Geospatial Intelligence Map
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">Explore company distributions, tech clusters, and live hiring locations across Dhaka.</p>
+          </div>
+          <button 
+            onClick={() => setShowMap(!showMap)}
+            className="whitespace-nowrap px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold rounded-xl border border-emerald-200 transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+          >
+            <MapPin className="w-3.5 h-3.5" />
+            {showMap ? 'Hide Interactive Map' : 'Load Interactive Map'}
+          </button>
         </div>
-        <button 
-          onClick={() => setShowMap(!showMap)}
-          className="whitespace-nowrap px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 text-xs font-semibold rounded-lg border border-emerald-500/30 transition-colors flex items-center justify-center"
-        >
-          {showMap ? 'Hide Interactive Map' : 'Load Interactive Map'}
-        </button>
-      </div>
 
-      {/* Interactive Map */}
-      {showMap && (
-        <CompanyMap companies={companies} jobs={filteredJobs} />
-      )}
+        {showMap && (
+          <div>
+            <CompanyMap companies={companies} jobs={filteredJobs} hideHeaderTitle={true} />
+          </div>
+        )}
+      </div>
 
       {/* Dynamic Filter Controls Panel */}
       <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm" id="analytics-filter-controls">
@@ -1763,7 +1827,18 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
         </div>
 
         {/* Tab Navigation Menu */}
-        <div className="flex flex-wrap items-center gap-2 p-1 bg-white border border-gray-200 rounded-xl max-w-md">
+        <div className="flex flex-wrap items-center gap-2 p-1 bg-white border border-gray-200 rounded-xl max-w-2xl">
+          <button
+            onClick={() => setActiveSalaryTab('betonkemon')}
+            className={`flex-1 text-center py-1.5 px-3 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeSalaryTab === 'betonkemon'
+                ? 'bg-emerald-50 border border-emerald-300 text-emerald-700 shadow-2xs'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Banknote className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Betonkemon ("বেতন কেমন?")</span>
+          </button>
           <button
             onClick={() => setActiveSalaryTab('roles')}
             className={`flex-1 text-center py-1.5 px-2.5 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
@@ -1805,6 +1880,236 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
             Market Density
           </button>
         </div>
+
+        {/* Tab 0: Betonkemon Live Crawled Salary Data */}
+        {activeSalaryTab === 'betonkemon' && (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header / Summary Metrics */}
+            <div className="bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/80 border border-emerald-200/80 p-5 rounded-2xl space-y-4 shadow-2xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-emerald-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full font-mono">
+                      LIVE CRAWLER ACTIVE
+                    </span>
+                    <h4 className="text-base font-bold text-gray-900">Betonkemon ("বেতন কেমন?") Crowdsourced Salary Engine</h4>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Live telemetry parsed from <a href="https://www.betonkemon.com" target="_blank" rel="noreferrer" className="text-emerald-700 underline font-semibold">betonkemon.com</a> — Bangladesh's tech developer compensation benchmark platform.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleRefreshBetonkemon}
+                  disabled={isRefreshingBetonkemon}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer shrink-0"
+                >
+                  <Zap className={`w-3.5 h-3.5 ${isRefreshingBetonkemon ? 'animate-spin' : ''}`} />
+                  <span>{isRefreshingBetonkemon ? 'Scraping Betonkemon...' : 'Re-crawl betonkemon.com'}</span>
+                </button>
+              </div>
+
+              {/* KPI Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
+                <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Avg Tech Salary</span>
+                  <div className="text-base font-extrabold text-emerald-700 font-mono mt-0.5">
+                    {betonkemonData.summary?.averageSalaryBDT?.toLocaleString() || '152,000'} BDT/mo
+                  </div>
+                  <span className="text-[10px] text-gray-500">Industry Mean</span>
+                </div>
+
+                <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Junior Median</span>
+                  <div className="text-base font-extrabold text-sky-700 font-mono mt-0.5">
+                    {betonkemonData.summary?.juniorMedianBDT?.toLocaleString() || '50,000'} BDT/mo
+                  </div>
+                  <span className="text-[10px] text-gray-500">0 - 2 Yrs Exp</span>
+                </div>
+
+                <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mid-Level Median</span>
+                  <div className="text-base font-extrabold text-indigo-700 font-mono mt-0.5">
+                    {betonkemonData.summary?.midMedianBDT?.toLocaleString() || '110,000'} BDT/mo
+                  </div>
+                  <span className="text-[10px] text-gray-500">2 - 5 Yrs Exp</span>
+                </div>
+
+                <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Senior / Lead Median</span>
+                  <div className="text-base font-extrabold text-purple-700 font-mono mt-0.5">
+                    {betonkemonData.summary?.seniorMedianBDT?.toLocaleString() || '210,000'} BDT/mo
+                  </div>
+                  <span className="text-[10px] text-gray-500">5+ Yrs Exp</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Submissions Table & Filters */}
+            <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <Terminal className="w-4 h-4 text-emerald-600" />
+                  <h4 className="text-sm font-semibold text-gray-900">
+                    Betonkemon Verified Salary Submissions ({
+                      betonkemonData.records.filter(r => {
+                        const matchesSearch = !betonkemonSearch || 
+                          r.company.toLowerCase().includes(betonkemonSearch.toLowerCase()) ||
+                          r.role.toLowerCase().includes(betonkemonSearch.toLowerCase()) ||
+                          (r.techStack || []).some((t: string) => t.toLowerCase().includes(betonkemonSearch.toLowerCase()));
+                        const matchesLevel = betonkemonLevelFilter === 'all' || r.level.toLowerCase().includes(betonkemonLevelFilter.toLowerCase());
+                        return matchesSearch && matchesLevel;
+                      }).length
+                    })
+                  </h4>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Search company or tech stack..."
+                    value={betonkemonSearch}
+                    onChange={(e) => setBetonkemonSearch(e.target.value)}
+                    className="bg-gray-50 border border-gray-200 text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-emerald-500 w-48"
+                  />
+                  <select
+                    value={betonkemonLevelFilter}
+                    onChange={(e) => setBetonkemonLevelFilter(e.target.value)}
+                    className="bg-gray-50 border border-gray-200 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-emerald-500 cursor-pointer"
+                  >
+                    <option value="all">All Seniority Levels</option>
+                    <option value="junior">Junior (0-2 Yrs)</option>
+                    <option value="mid">Mid-Level (2-5 Yrs)</option>
+                    <option value="senior">Senior (5+ Yrs)</option>
+                    <option value="lead">Lead / Staff</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Data Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase font-semibold text-[10px]">
+                      <th className="py-2.5 px-3">Company</th>
+                      <th className="py-2.5 px-3">Role &amp; Seniority</th>
+                      <th className="py-2.5 px-3">Experience</th>
+                      <th className="py-2.5 px-3">Monthly Salary (BDT)</th>
+                      <th className="py-2.5 px-3">Tech Stack</th>
+                      <th className="py-2.5 px-3">Work Mode</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 font-medium">
+                    {paginatedBetonkemonRecords.map((rec) => (
+                      <tr key={rec.id} className="hover:bg-emerald-50/30 transition-colors">
+                        <td className="py-3 px-3 font-semibold text-gray-900">{rec.company}</td>
+                        <td className="py-3 px-3">
+                          <div className="font-semibold text-gray-800">{rec.role}</div>
+                          <div className="text-[10px] text-emerald-700 font-mono">{rec.level}</div>
+                        </td>
+                        <td className="py-3 px-3 text-gray-600 font-mono">{rec.expYears} Yrs</td>
+                        <td className="py-3 px-3">
+                          <span className="font-extrabold text-emerald-700 font-mono bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md text-[11px]">
+                            {rec.monthlySalaryBDT.toLocaleString()} BDT
+                          </span>
+                        </td>
+                        <td className="py-3 px-3">
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            {(rec.techStack || []).map((tech: string, tIdx: number) => (
+                              <span key={`${rec.id}-${tech}-${tIdx}`} className="bg-gray-100 border border-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[9px]">
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="py-3 px-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                            rec.workType === 'Remote' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
+                            rec.workType === 'Hybrid' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                            'bg-gray-100 border border-gray-200 text-gray-700'
+                          }`}>
+                            {rec.workType}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+
+                    {paginatedBetonkemonRecords.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="py-8 text-center text-gray-500 text-xs">
+                          No salary submissions match your search filter.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Controls */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
+                <div className="flex items-center gap-3">
+                  <span>
+                    Showing <strong className="text-gray-900 font-mono">{filteredBetonkemonRecords.length > 0 ? (betonkemonPage - 1) * betonkemonPerPage + 1 : 0}</strong> to <strong className="text-gray-900 font-mono">{Math.min(betonkemonPage * betonkemonPerPage, filteredBetonkemonRecords.length)}</strong> of <strong className="text-gray-900 font-mono">{filteredBetonkemonRecords.length.toLocaleString()}</strong> submissions
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-gray-500">Per page:</span>
+                    <select
+                      value={betonkemonPerPage}
+                      onChange={(e) => setBetonkemonPerPage(Number(e.target.value))}
+                      className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs font-semibold focus:outline-none cursor-pointer"
+                    >
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setBetonkemonPage(1)}
+                    disabled={betonkemonPage === 1}
+                    className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+                    title="First Page"
+                  >
+                    <ChevronsLeft className="w-4 h-4 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => setBetonkemonPage(prev => Math.max(prev - 1, 1))}
+                    disabled={betonkemonPage === 1}
+                    className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+                    title="Previous Page"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-gray-600" />
+                  </button>
+
+                  <span className="px-3 py-1 font-mono font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+                    Page {betonkemonPage} of {totalBetonkemonPages}
+                  </span>
+
+                  <button
+                    onClick={() => setBetonkemonPage(prev => Math.min(prev + 1, totalBetonkemonPages))}
+                    disabled={betonkemonPage === totalBetonkemonPages}
+                    className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+                    title="Next Page"
+                  >
+                    <ChevronRight className="w-4 h-4 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => setBetonkemonPage(totalBetonkemonPages)}
+                    disabled={betonkemonPage === totalBetonkemonPages}
+                    className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
+                    title="Last Page"
+                  >
+                    <ChevronsRight className="w-4 h-4 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab 1: Role Categories */}
         {activeSalaryTab === 'roles' && (

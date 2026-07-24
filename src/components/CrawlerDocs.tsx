@@ -5,35 +5,49 @@ import { BookOpen, HelpCircle, CheckCircle2, AlertCircle, Sparkles, Zap, Cpu, La
 export default function CrawlerDocs() {
   return (
     <div className="space-y-8" id="crawler-docs-container">
-      {/* Dual Directory Merging Block */}
-      <div className="bg-gradient-to-r from-indigo-50 via-white to-violet-50 border border-indigo-100 p-6 sm:p-8 rounded-2xl space-y-4">
+      {/* Quad Directory Merging Block */}
+      <div className="bg-gradient-to-r from-indigo-50 via-white to-emerald-50 border border-indigo-100 p-6 sm:p-8 rounded-2xl space-y-4">
         <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
           <Layers className="text-indigo-600 w-5 h-5 animate-pulse" />
-          Dual-Directory Synchronization Engine
+          Quad-Directory &amp; Salary Telemetry Engine
         </h3>
         <p className="text-xs text-gray-600 leading-relaxed max-w-4xl">
           To provide the most complete representation of Bangladesh's software development landscape, our system live-fetches, 
-          normalizes, and merges two dominant developer directories on the fly:
+          normalizes, and merges four key industry directories and salary platforms on the fly:
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl space-y-2">
             <h4 className="text-xs font-bold text-indigo-600">1. Just Apply Directory</h4>
             <p className="text-[11px] text-gray-600 leading-relaxed">
-              Maintained by <code>badhon495</code>. This contains high-integrity recruitment email addresses (HR/recruiter), 
-              office directions, direct website links, and primary career portals for over 150+ Bangladeshi IT companies.
+              Maintained by <code>badhon495</code>. Contains recruitment HR email addresses, 
+              office locations, direct website links, and primary career portals for 150+ Bangladeshi IT companies.
             </p>
           </div>
           <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl space-y-2">
-            <h4 className="text-xs font-bold text-violet-400">2. MBSTUPC Directory</h4>
+            <h4 className="text-xs font-bold text-violet-600">2. MBSTUPC Directory</h4>
             <p className="text-[11px] text-gray-600 leading-relaxed">
-              A comprehensive open-source database of tech companies in Bangladesh. It contributes critical metadata 
-              including team sizes (engineer counts), social profile links (Facebook, Twitter), and direct list of technology stacks.
+              Open-source database contributing critical metadata including engineering team size metrics, social profiles, 
+              and primary technology stacks.
+            </p>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl space-y-2">
+            <h4 className="text-xs font-bold text-emerald-600">3. Bangladesh Yellow Pages</h4>
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Parsed from <code>Computer_software_solution</code> category. Contributes verified telephone numbers, 
+              Banani/Uttara/Mirpur office addresses, and custom enterprise software categories.
+            </p>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl space-y-2">
+            <h4 className="text-xs font-bold text-teal-600">4. Betonkemon ("বেতন কেমন?")</h4>
+            <p className="text-[11px] text-gray-600 leading-relaxed">
+              Crawls <code>betonkemon.com</code> salary transparency submissions. Contributes crowdsourced developer compensation 
+              data, experience salary curves, and tech stack salary premiums.
             </p>
           </div>
         </div>
         <p className="text-[11px] text-gray-500 italic leading-relaxed">
-          * How the merge works: The server normalizes names (e.g. ignoring case, punctuation, and generic suffixes), maps keys, 
-          enriches Just Apply contacts with MBSTUPC team size/tech attributes, and appends unique listings only present in one source.
+          * How the merge works: The server normalizes company names (ignoring punctuation and suffixes like Ltd / PLC), maps keys, 
+          enriches contact emails, phone numbers, and salary benchmarks into a single unified directory.
         </p>
       </div>
 
