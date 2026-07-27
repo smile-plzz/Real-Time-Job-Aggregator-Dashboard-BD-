@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    function isValidEmail(email) {
+      return email is string && email.size() <= 256 && email.matches('^[^@]+@[^@]+\\.[^@]+$');
+    }
+
+    // Default deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Jobs Collection - Publicly readable, write restricted to authenticated users/admins
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Subscribers Collection - Anyone can subscribe with valid email
+    match /subscribers/{subscriberId} {
+      allow read: if true;
+      allow create, update: if request.resource.data.email is string && isValidEmail(request.resource.data.email);
+      allow delete: if isSignedIn();
+    }
+
+    // Users Collection and Subcollections
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /savedJobs/{savedJobId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}

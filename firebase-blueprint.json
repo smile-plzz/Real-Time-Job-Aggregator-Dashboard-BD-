@@ -1,0 +1,119 @@
+{
+  "entities": {
+    "Subscriber": {
+      "title": "Subscriber",
+      "description": "Email subscriber for job alerts",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Recipient email address"
+        },
+        "frequency": {
+          "type": "string",
+          "enum": ["daily", "weekly"],
+          "description": "Alert schedule frequency"
+        },
+        "categories": {
+          "type": "array",
+          "description": "Selected tech job categories"
+        },
+        "experienceLevels": {
+          "type": "array",
+          "description": "Selected experience levels"
+        },
+        "workModes": {
+          "type": "array",
+          "description": "Selected work modes"
+        },
+        "locations": {
+          "type": "array",
+          "description": "Selected locations"
+        },
+        "maxJobs": {
+          "type": "number",
+          "description": "Maximum number of jobs per digest"
+        },
+        "templateTheme": {
+          "type": "string",
+          "description": "Visual theme identifier"
+        },
+        "subscribedAt": {
+          "type": "string",
+          "description": "ISO timestamp when subscribed"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Active subscription flag"
+        }
+      },
+      "required": ["email", "frequency", "subscribedAt", "active"]
+    },
+    "Job": {
+      "title": "Job",
+      "description": "Tech job vacancy document",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "title": { "type": "string" },
+        "department": { "type": "string" },
+        "location": { "type": "string" },
+        "type": { "type": "string" },
+        "link": { "type": "string" },
+        "skills": { "type": "array" },
+        "experienceLevel": { "type": "string" },
+        "category": { "type": "string" },
+        "salary": { "type": "string" },
+        "summary": { "type": "string" },
+        "dateAdded": { "type": "string" },
+        "source": { "type": "string" }
+      },
+      "required": ["companyName", "title", "link", "category", "dateAdded"]
+    },
+    "SavedJob": {
+      "title": "SavedJob",
+      "description": "User bookmarked job opening",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "companyName": { "type": "string" },
+        "location": { "type": "string" },
+        "link": { "type": "string" },
+        "savedAt": { "type": "string" }
+      },
+      "required": ["userId", "jobId", "savedAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile document",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/subscribers/{subscriberId}": {
+      "schema": "#/entities/Subscriber",
+      "description": "Subscribers for daily or weekly email digests"
+    },
+    "/jobs/{jobId}": {
+      "schema": "#/entities/Job",
+      "description": "Aggregated tech job listings"
+    },
+    "/users/{userId}": {
+      "schema": "#/entities/UserProfile",
+      "description": "User public profiles"
+    },
+    "/users/{userId}/savedJobs/{savedJobId}": {
+      "schema": "#/entities/SavedJob",
+      "description": "Bookmarked jobs for an individual user"
+    }
+  }
+}

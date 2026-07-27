@@ -3,14 +3,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Job, Company, validateJob, ValidationIssue } from '../types';
 import { 
   X, Building2, MapPin, Briefcase, Calendar, DollarSign, ExternalLink, 
   Sparkles, AlertCircle, FileText, AlertTriangle, Users, Globe, Mail, 
-  CheckCircle2, ShieldAlert 
+  CheckCircle2, ShieldAlert, Bookmark, Check
 } from 'lucide-react';
+import { auth } from '../lib/firebase';
+import { toggleSaveJobInFirestore, removeSavedJobFromFirestore, subscribeToSavedJobs } from '../lib/savedJobsService';
 
 interface JobDetailModalProps {
   job: Job | null;
@@ -19,7 +21,39 @@ interface JobDetailModalProps {
 }
 
 export default function JobDetailModal({ job, company, onClose }: JobDetailModalProps) {
+  const [isSaved, setIsSaved] = useState(false);
+  const [savingState, setSavingState] = useState(false);
+
+  useEffect(() => {
+    if (!job) return;
+    const unsubscribe = subscribeToSavedJobs((ids) => {
+      setIsSaved(ids.includes(job.id));
+    });
+    return () => unsubscribe();
+  }, [job]);
+
   if (!job) return null;
+
+  const handleToggleBookmark = async () => {
+    if (!auth.currentUser) {
+      alert('Please sign in with Google in the header to bookmark jobs to your account.');
+      return;
+    }
+    setSavingState(true);
+    try {
+      if (isSaved) {
+        await removeSavedJobFromFirestore(job.id);
+        setIsSaved(false);
+      } else {
+        await toggleSaveJobInFirestore(job);
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error('Bookmark toggle failed:', err);
+    } finally {
+      setSavingState(false);
+    }
+  };
 
   const categoryLabels: Record<string, string> = {
     frontend: 'Frontend Engineering',
@@ -306,8 +340,30 @@ export default function JobDetailModal({ job, company, onClose }: JobDetailModal
                   </div>
                 )}
                 
-                {/* Apply Button */}
-                <div className="pt-2">
+                {/* Bookmark & Apply Action Buttons */}
+                <div className="pt-2 space-y-2.5">
+                  <button
+                    onClick={handleToggleBookmark}
+                    disabled={savingState}
+                    className={`w-full py-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition-all cursor-pointer shadow-sm ${
+                      isSaved
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                        : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
+                    }`}
+                  >
+                    {isSaved ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-600" />
+                        Job Saved to Firebase
+                      </>
+                    ) : (
+                      <>
+                        <Bookmark className="w-4 h-4 text-indigo-600" />
+                        Save Job to Account
+                      </>
+                    )}
+                  </button>
+
                   <a
                     href={job.link}
                     target="_blank"
@@ -319,7 +375,7 @@ export default function JobDetailModal({ job, company, onClose }: JobDetailModal
                   </a>
                   <button
                     onClick={onClose}
-                    className="w-full mt-3 py-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
+                    className="w-full py-2.5 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold text-gray-700 transition-colors cursor-pointer"
                   >
                     Close
                   </button>
