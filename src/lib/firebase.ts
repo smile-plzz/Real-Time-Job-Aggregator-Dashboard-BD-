@@ -1,5 +1,14 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User } from 'firebase/auth';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithRedirect, 
+  getRedirectResult, 
+  signOut, 
+  onAuthStateChanged, 
+  User 
+} from 'firebase/auth';
 import { 
   getFirestore, 
   doc, 
@@ -47,10 +56,12 @@ const app = initializeApp(firebaseConfig);
 // Initialize Firestore with database ID
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
-
 // Initialize Auth
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
 
 // Error Handling Enum and Helper as required by Firebase skill
 export enum OperationType {
@@ -102,15 +113,37 @@ export async function testFirestoreConnection() {
   }
 }
 
+// Catch redirect sign-in results when returning to app
+export async function handleRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      return result.user;
+    }
+  } catch (err) {
+    console.error('Error in getRedirectResult:', err);
+    throw err;
+  }
+  return null;
+}
+
 // Authentication Helpers
-export async function loginWithGoogle() {
+export async function loginWithGoogle(useRedirect = false) {
+  if (useRedirect) {
+    await signInWithRedirect(auth, googleProvider);
+    return null;
+  }
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
-  } catch (err) {
+  } catch (err: any) {
     console.error('Google Auth Error:', err);
     throw err;
   }
+}
+
+export async function loginWithGoogleRedirect() {
+  await signInWithRedirect(auth, googleProvider);
 }
 
 export async function logoutUser() {
