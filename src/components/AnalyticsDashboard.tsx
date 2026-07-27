@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { CompanyMap } from './CompanyMap';
 import { SalaryAnalytics } from './SalaryAnalytics';
+import { DetailModal } from './DetailModal';
 
 interface AnalyticsDashboardProps {
   companies: Company[];
@@ -43,79 +44,82 @@ interface AnalyticsDashboardProps {
 export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboardProps) {
   const [showMap, setShowMap] = useState<boolean>(false);
   const [isSalaryAnalyticsOpen, setIsSalaryAnalyticsOpen] = useState<boolean>(false);
+
+  // --- Modal Drilldown State ---
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    subtitle?: string;
+    icon?: React.ReactNode;
+    badge?: string;
+    jobs: Job[];
+    companyProfile?: Company;
+    statsSummary?: { label: string; value: string | number; color?: string }[];
+  }>({
+    isOpen: false,
+    title: '',
+    jobs: []
+  });
+
+  const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
+
+  const openCompanyModal = (companyName: string) => {
+    const compJobs = jobs.filter(j => j.companyName.toLowerCase().trim() === companyName.toLowerCase().trim());
+    const profile = companies.find(c => c.name.toLowerCase().trim() === companyName.toLowerCase().trim());
+    setModalState({
+      isOpen: true,
+      title: `${companyName}`,
+      subtitle: `Analytics drilldown & ${compJobs.length} active open positions`,
+      icon: <Building2 className="w-6 h-6 text-indigo-500" />,
+      badge: 'Company Profile',
+      jobs: compJobs,
+      companyProfile: profile,
+      statsSummary: [
+        { label: 'Active Openings', value: compJobs.length, color: 'text-indigo-600' },
+        { label: 'Location', value: profile?.location || compJobs[0]?.location || 'Dhaka', color: 'text-gray-900' }
+      ]
+    });
+  };
+
+  const openCategoryModal = (catName: string) => {
+    const matchedJobs = jobs.filter(j => j.category?.toLowerCase().includes(catName.toLowerCase()) || catName.toLowerCase().includes(j.category?.toLowerCase() || ''));
+    setModalState({
+      isOpen: true,
+      title: `Category: ${catName}`,
+      subtitle: `All active openings in ${catName}`,
+      icon: <PieIcon className="w-6 h-6 text-indigo-500" />,
+      badge: 'Category Breakdown',
+      jobs: matchedJobs,
+      statsSummary: [
+        { label: 'Matching Roles', value: matchedJobs.length, color: 'text-indigo-600' },
+        { label: 'Hiring Companies', value: new Set(matchedJobs.map(j => j.companyName)).size, color: 'text-emerald-600' }
+      ]
+    });
+  };
+
+  const openSkillModal = (skillName: string) => {
+    const matchedJobs = jobs.filter(j => 
+      Array.isArray(j.skills) && j.skills.some(s => s.toLowerCase().trim() === skillName.toLowerCase().trim())
+    );
+    setModalState({
+      isOpen: true,
+      title: `Technology: ${skillName}`,
+      subtitle: `Postings requiring ${skillName}`,
+      icon: <Terminal className="w-6 h-6 text-indigo-500" />,
+      badge: 'Skill Demand',
+      jobs: matchedJobs,
+      statsSummary: [
+        { label: 'Required Count', value: matchedJobs.length, color: 'text-indigo-600' },
+        { label: 'Companies', value: new Set(matchedJobs.map(j => j.companyName)).size, color: 'text-emerald-600' }
+      ]
+    });
+  };
   // --- Filter States ---
   const [selectedExperience, setSelectedExperience] = useState<string>('all');
   const [selectedWorkMode, setSelectedWorkMode] = useState<string>('all');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedSalaryType, setSelectedSalaryType] = useState<string>('all'); // 'all', 'disclosed', 'negotiable'
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  // --- Salary Tabs State ---
-  const [activeSalaryTab, setActiveSalaryTab] = useState<'roles' | 'experience' | 'estimator' | 'distribution' | 'betonkemon'>('betonkemon');
-
-  // --- Betonkemon ("বেতন কেমন?") Live Salary State ---
-  const [betonkemonData, setBetonkemonData] = useState<{ records: any[]; summary: any; lastUpdated?: string }>({ records: [], summary: null });
-  const [betonkemonSearch, setBetonkemonSearch] = useState<string>('');
-  const [betonkemonLevelFilter, setBetonkemonLevelFilter] = useState<string>('all');
-  const [isRefreshingBetonkemon, setIsRefreshingBetonkemon] = useState<boolean>(false);
-  const [betonkemonPage, setBetonkemonPage] = useState<number>(1);
-  const [betonkemonPerPage, setBetonkemonPerPage] = useState<number>(20);
-
-  React.useEffect(() => {
-    setBetonkemonPage(1);
-  }, [betonkemonSearch, betonkemonLevelFilter, betonkemonPerPage]);
-
-  const filteredBetonkemonRecords = useMemo(() => {
-    return (betonkemonData.records || []).filter(r => {
-      const matchesSearch = !betonkemonSearch || 
-        r.company.toLowerCase().includes(betonkemonSearch.toLowerCase()) ||
-        r.role.toLowerCase().includes(betonkemonSearch.toLowerCase()) ||
-        (r.techStack || []).some((t: string) => t.toLowerCase().includes(betonkemonSearch.toLowerCase()));
-      const matchesLevel = betonkemonLevelFilter === 'all' || r.level.toLowerCase().includes(betonkemonLevelFilter.toLowerCase());
-      return matchesSearch && matchesLevel;
-    });
-  }, [betonkemonData.records, betonkemonSearch, betonkemonLevelFilter]);
-
-  const totalBetonkemonPages = Math.ceil(filteredBetonkemonRecords.length / betonkemonPerPage) || 1;
-
-  const paginatedBetonkemonRecords = useMemo(() => {
-    const startIdx = (betonkemonPage - 1) * betonkemonPerPage;
-    return filteredBetonkemonRecords.slice(startIdx, startIdx + betonkemonPerPage);
-  }, [filteredBetonkemonRecords, betonkemonPage, betonkemonPerPage]);
-
-  React.useEffect(() => {
-    fetch('/api/betonkemon-salaries')
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.records) {
-          setBetonkemonData(data);
-        }
-      })
-      .catch(err => console.error('Failed to load Betonkemon data:', err));
-  }, []);
-
-  const handleRefreshBetonkemon = async () => {
-    setIsRefreshingBetonkemon(true);
-    try {
-      const res = await fetch('/api/scrape-betonkemon', { method: 'POST' });
-      const json = await res.json();
-      if (json && json.data) {
-        setBetonkemonData(json.data);
-      }
-    } catch (e) {
-      console.error('Error refreshing Betonkemon records:', e);
-    } finally {
-      setIsRefreshingBetonkemon(false);
-    }
-  };
-
-  // --- Salary Estimator Tool State ---
-  const [estimateRole, setEstimateRole] = useState<string>('fullstack');
-  const [estimateExp, setEstimateExp] = useState<string>('mid');
-  const [estimateMode, setEstimateMode] = useState<string>('onsite');
-
-  // --- Interactive Salary Distribution State ---
-  const [distSelectedRole, setDistSelectedRole] = useState<string>('fullstack');
 
   // --- Predictive Hiring Trend Filter State ---
   const [trendRoleFilter, setTrendRoleFilter] = useState<string>('all');
@@ -561,201 +565,7 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
     return totalJobsCount > 0 ? Math.round((totalWithSalary / totalJobsCount) * 100) : 0;
   }, [filteredJobs]);
 
-  // Dynamic interactive role-specific salary distribution density curve
-  const selectedDistRoleStats = useMemo(() => {
-    const matched = roleSalaryComparison.find(r => r.category === distSelectedRole);
-    
-    const stats = matched || {
-      category: distSelectedRole,
-      name: distSelectedRole === 'qa' ? 'QA & Testing' : distSelectedRole === 'devops' ? 'DevOps' : distSelectedRole === 'fullstack' ? 'Fullstack' : distSelectedRole === 'frontend' ? 'Frontend' : distSelectedRole === 'backend' ? 'Backend' : distSelectedRole === 'mobile' ? 'Mobile Dev' : distSelectedRole.charAt(0).toUpperCase() + distSelectedRole.slice(1),
-      min: 0,
-      average: 0,
-      max: 0,
-      count: 0
-    };
 
-    const minVal = stats.min;
-    const avgVal = stats.average;
-    const maxVal = stats.max;
-
-    // Tech-stack recommendation mappings
-    const hotTechMap: Record<string, string[]> = {
-      frontend: ['React / Next.js', 'Tailwind CSS', 'TypeScript', 'Redux Toolkit', 'Vite / ESBuild'],
-      backend: ['Go (Golang)', 'NestJS / Express', 'PostgreSQL', 'Docker / K8s', 'Redis / gRPC'],
-      fullstack: ['Next.js App Router', 'TypeScript', 'PostgreSQL', 'Prisma ORM', 'AWS deployment'],
-      mobile: ['Flutter / Dart', 'React Native', 'Kotlin / Swift', 'Firebase Auth', 'GraphQL APIs'],
-      devops: ['Kubernetes', 'Terraform', 'CI/CD Pipelines', 'AWS / GCP Engine', 'Docker'],
-      qa: ['Selenium WebDriver', 'Playwright', 'Jest / Cypress', 'Postman / Newman', 'JIRA'],
-      product: ['Agile Roadmap Mgt', 'Figma Wireframing', 'Product Analytics', 'KPI Tracking', 'Asana'],
-      design: ['Figma Mastery', 'Design Systems', 'Micro-Interactions', 'User Testing', 'Adobe CC'],
-      other: ['Python / Fast API', 'Java / Spring Boot', 'PHP / Laravel', 'SQL / MySQL', 'GitHub actions']
-    };
-
-    if (avgVal === 0) {
-      return {
-        ...stats,
-        curveData: [],
-        p10: 0,
-        p50: 0,
-        p90: 0,
-        p99: 0,
-        hotTechs: hotTechMap[distSelectedRole] || ['Git / GitHub', 'REST APIs', 'SQL Database']
-      };
-    }
-    
-    // Spread the curve between min and max
-    const start = Math.max(10000, Math.round(minVal * 0.75));
-    const end = Math.round(maxVal * 1.25);
-    const step = Math.round((end - start) / 11) || 5000;
-    
-    const curvePoints = [];
-    const mean = avgVal;
-    const stdDev = Math.max(15000, (maxVal - minVal) / 3);
-    
-    for (let i = 0; i < 12; i++) {
-      const x = start + i * step;
-      // Normal distribution probability density function (bell-shape curve)
-      const exponent = -0.5 * Math.pow((x - mean) / stdDev, 2);
-      const densityRaw = Math.exp(exponent) * 100;
-      const density = Math.max(4, Math.round(densityRaw));
-      
-      curvePoints.push({
-        salary: x,
-        salaryFormatted: `${Math.round(x / 1000)}k`,
-        density,
-      });
-    }
-    
-    // Calculate benchmark percentiles
-    const p10 = Math.max(start, Math.round(mean - 1.28 * stdDev));
-    const p50 = mean;
-    const p90 = Math.round(mean + 1.28 * stdDev);
-    const p99 = Math.round(mean + 2.33 * stdDev);
-
-    return {
-      ...stats,
-      curveData: curvePoints,
-      p10,
-      p50,
-      p90,
-      p99,
-      hotTechs: hotTechMap[distSelectedRole] || ['Git / GitHub', 'REST APIs', 'SQL Database']
-    };
-  }, [roleSalaryComparison, distSelectedRole]);
-
-  // 10b. Experience Salary Comparative Progression
-  const experienceSalaryComparison = useMemo(() => {
-    const levels: Record<string, { label: string; totalSalary: number; countWithSalary: number; minSalary: number; maxSalary: number }> = {
-      intern: { label: 'Internship', totalSalary: 0, countWithSalary: 0, minSalary: Infinity, maxSalary: 0 },
-      junior: { label: 'Junior Profile', totalSalary: 0, countWithSalary: 0, minSalary: Infinity, maxSalary: 0 },
-      mid: { label: 'Mid-Level', totalSalary: 0, countWithSalary: 0, minSalary: Infinity, maxSalary: 0 },
-      senior: { label: 'Senior Expert', totalSalary: 0, countWithSalary: 0, minSalary: Infinity, maxSalary: 0 },
-      lead: { label: 'Tech Lead / VP', totalSalary: 0, countWithSalary: 0, minSalary: Infinity, maxSalary: 0 }
-    };
-
-    filteredJobs.forEach(job => {
-      const level = job.experienceLevel;
-      if (!levels[level]) return;
-
-      const salaryStr = (job.salary || '').toLowerCase().replace(/,/g, '');
-      const numbers = salaryStr.match(/\d+/g);
-      let parsedValue: number | null = null;
-      
-      if (numbers && numbers.length > 0) {
-        const vals = numbers.map(n => parseInt(n, 10));
-        const adjustedVals = vals.map(v => {
-          if (v > 0 && v < 1000) return v * 1000;
-          return v;
-        });
-
-        if (adjustedVals.length >= 2) {
-          parsedValue = (adjustedVals[0] + adjustedVals[1]) / 2;
-        } else {
-          parsedValue = adjustedVals[0];
-        }
-      }
-
-      if (parsedValue && parsedValue > 5000) {
-        levels[level].totalSalary += parsedValue;
-        levels[level].countWithSalary++;
-        if (parsedValue > levels[level].maxSalary) levels[level].maxSalary = parsedValue;
-        if (parsedValue < levels[level].minSalary) levels[level].minSalary = parsedValue;
-      }
-    });
-
-    const defaultAverages: Record<string, { avg: number; min: number; max: number }> = {
-      intern: { avg: 18000, min: 12000, max: 25000 },
-      junior: { avg: 50000, min: 35000, max: 65000 },
-      mid: { avg: 85000, min: 65000, max: 110000 },
-      senior: { avg: 135000, min: 100000, max: 180000 },
-      lead: { avg: 185000, min: 150000, max: 250000 }
-    };
-
-    return Object.entries(levels).map(([key, data]) => {
-      const hasRealData = data.countWithSalary > 0;
-      const average = hasRealData ? Math.round(data.totalSalary / data.countWithSalary) : defaultAverages[key].avg;
-      const min = (hasRealData && data.minSalary !== Infinity) ? data.minSalary : defaultAverages[key].min;
-      const max = (hasRealData && data.maxSalary > 0) ? data.maxSalary : defaultAverages[key].max;
-
-      return {
-        key,
-        name: data.label,
-        average,
-        min,
-        max,
-        count: data.countWithSalary
-      };
-    });
-  }, [filteredJobs]);
-
-  // 10c. Dynamic Salary Estimator Matrix
-  const estimatedSalaryDetails = useMemo(() => {
-    const baseSalaries: Record<string, number> = {
-      frontend: 62000,
-      backend: 70000,
-      fullstack: 78000,
-      mobile: 68000,
-      devops: 82000,
-      qa: 46000,
-      product: 75000,
-      design: 44000,
-      other: 52000
-    };
-
-    const expMultipliers: Record<string, number> = {
-      intern: 0.28,
-      junior: 0.72,
-      mid: 1.25,
-      senior: 2.10,
-      lead: 2.85,
-      unspecified: 1.05
-    };
-
-    const modeMultipliers: Record<string, number> = {
-      onsite: 1.0,
-      hybrid: 1.08,
-      remote: 1.22
-    };
-
-    const base = baseSalaries[estimateRole] || 52000;
-    const expMult = expMultipliers[estimateExp] || 1.0;
-    const modeMult = modeMultipliers[estimateMode] || 1.0;
-
-    const estimatedAvg = Math.round(base * expMult * modeMult);
-    const lowBound = Math.round(estimatedAvg * 0.82);
-    const highBound = Math.round(estimatedAvg * 1.22);
-
-    return {
-      average: estimatedAvg,
-      min: lowBound,
-      max: highBound,
-      percentiles: {
-        p25: Math.round(estimatedAvg * 0.88),
-        p50: estimatedAvg,
-        p75: Math.round(estimatedAvg * 1.15)
-      }
-    };
-  }, [estimateRole, estimateExp, estimateMode]);
 
   // 10d. Enriched Cross-Perspective Role vs Experience Level Salary Matrix
   const roleVsExperienceSalary = useMemo(() => {
@@ -944,48 +754,6 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
         {showMap && (
           <div>
             <CompanyMap companies={companies} jobs={filteredJobs} hideHeaderTitle={true} />
-          </div>
-        )}
-      </div>
-
-      {/* Collapsible Salary Analytics Section */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm" id="collapsible-salary-analytics">
-        <button
-          onClick={() => setIsSalaryAnalyticsOpen(!isSalaryAnalyticsOpen)}
-          className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 bg-gradient-to-r from-emerald-50/60 via-white to-indigo-50/40 hover:bg-emerald-50/80 transition-colors cursor-pointer text-left"
-        >
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0">
-              <Banknote className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-bold text-gray-900">
-                  Salary Analytics &amp; Crowdsourced Reports
-                </h3>
-                <span className="text-[10px] font-mono font-bold bg-amber-500/10 text-amber-700 px-2 py-0.5 rounded-full border border-amber-500/20">
-                  Experimental Telemetry
-                </span>
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Crowdsourced compensation reports (Betonkemon dataset), level estimators, and role wage distributions.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="text-xs font-semibold text-emerald-700 hidden sm:inline">
-              {isSalaryAnalyticsOpen ? 'Hide Section' : 'Expand Section'}
-            </span>
-            <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-600 shadow-2xs">
-              {isSalaryAnalyticsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            </div>
-          </div>
-        </button>
-
-        {isSalaryAnalyticsOpen && (
-          <div className="p-4 sm:p-6 bg-gray-50/50 border-t border-gray-200/80 space-y-6 animate-in fade-in duration-200">
-            <SalaryAnalytics companies={companies} jobs={jobs} />
           </div>
         )}
       </div>
@@ -1611,15 +1379,19 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
           <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
             {topHiringCompanies.length > 0 ? (
               topHiringCompanies.map((c, idx) => (
-                <div key={c.id} className="flex items-center justify-between bg-white border border-gray-200 p-2.5 rounded-xl">
+                <div 
+                  key={c.name || idx} 
+                  onClick={() => openCompanyModal(c.name)}
+                  className="flex items-center justify-between bg-white border border-gray-200 hover:border-indigo-300 p-2.5 rounded-xl cursor-pointer transition-all hover:shadow-xs group"
+                >
                   <div className="flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-md bg-indigo-500/10 text-indigo-600 font-bold text-[10px] flex items-center justify-center border border-indigo-500/20">
+                    <span className="w-5 h-5 rounded-md bg-indigo-500/10 text-indigo-600 font-bold text-[10px] flex items-center justify-center border border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                       #{idx + 1}
                     </span>
-                    <span className="text-xs font-semibold text-gray-800 truncate max-w-[130px]">{c.name}</span>
+                    <span className="text-xs font-semibold text-gray-800 group-hover:text-indigo-600 transition-colors truncate max-w-[130px]">{c.name}</span>
                   </div>
-                  <span className="text-[10px] font-mono bg-gray-100 border border-gray-300 text-gray-800 px-2 py-0.5 rounded-full font-bold">
-                    {c.value} active opening{c.value !== 1 ? 's' : ''}
+                  <span className="text-[10px] font-mono bg-gray-100 border border-gray-300 group-hover:bg-indigo-50 group-hover:border-indigo-200 text-gray-800 group-hover:text-indigo-700 px-2 py-0.5 rounded-full font-bold">
+                    {c.value} opening{c.value !== 1 ? 's' : ''}
                   </span>
                 </div>
               ))
@@ -1841,702 +1613,9 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
         </div>
       </div>
 
-      {/* 11. Role Salary Ranges Comparative Section */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 space-y-6" id="salary-comparison-detailed-section">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-200 pb-4">
-          <div>
-            <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <Banknote className="w-5 h-5 text-indigo-600 animate-pulse" />
-              Bangladesh Tech Salary Intelligence Engine (BDT/month)
-            </h3>
-            <p className="text-xs text-gray-600 mt-1">
-              Deep, multi-perspective wage analytics, career trajectory maps, and custom budget configuration models.
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-3.5 bg-white border border-gray-200 px-4 py-2.5 rounded-xl self-start md:self-auto shrink-0">
-            <div className="text-xs space-y-0.5">
-              <div className="text-[10px] uppercase font-bold text-gray-500">Highest Sector Avg</div>
-              <div className="font-extrabold text-emerald-600 font-mono">{bestPayingRole.name} ({bestPayingRole.val})</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tab Navigation Menu */}
-        <div className="flex flex-wrap items-center gap-2 p-1 bg-white border border-gray-200 rounded-xl max-w-2xl">
-          <button
-            onClick={() => setActiveSalaryTab('betonkemon')}
-            className={`flex-1 text-center py-1.5 px-3 text-[11px] font-bold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-              activeSalaryTab === 'betonkemon'
-                ? 'bg-emerald-50 border border-emerald-300 text-emerald-700 shadow-2xs'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            <Banknote className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Betonkemon ("বেতন কেমন?")</span>
-          </button>
-          <button
-            onClick={() => setActiveSalaryTab('roles')}
-            className={`flex-1 text-center py-1.5 px-2.5 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
-              activeSalaryTab === 'roles'
-                ? 'bg-gray-100 border border-gray-300 text-indigo-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Role Categories
-          </button>
-          <button
-            onClick={() => setActiveSalaryTab('experience')}
-            className={`flex-1 text-center py-1.5 px-2.5 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
-              activeSalaryTab === 'experience'
-                ? 'bg-gray-100 border border-gray-300 text-indigo-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Exp Trajectory
-          </button>
-          <button
-            onClick={() => setActiveSalaryTab('estimator')}
-            className={`flex-1 text-center py-1.5 px-2.5 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
-              activeSalaryTab === 'estimator'
-                ? 'bg-gray-100 border border-gray-300 text-indigo-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Estimator Tool
-          </button>
-          <button
-            onClick={() => setActiveSalaryTab('distribution')}
-            className={`flex-1 text-center py-1.5 px-2.5 text-[11px] font-semibold rounded-lg transition-all cursor-pointer ${
-              activeSalaryTab === 'distribution'
-                ? 'bg-gray-100 border border-gray-300 text-[#10B981]'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Market Density
-          </button>
-        </div>
-
-        {/* Tab 0: Betonkemon Live Crawled Salary Data */}
-        {activeSalaryTab === 'betonkemon' && (
-          <div className="space-y-6 animate-fadeIn">
-            {/* Header / Summary Metrics */}
-            <div className="bg-gradient-to-r from-emerald-50/80 via-white to-teal-50/80 border border-emerald-200/80 p-5 rounded-2xl space-y-4 shadow-2xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-emerald-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-full font-mono">
-                      LIVE CRAWLER ACTIVE
-                    </span>
-                    <h4 className="text-base font-bold text-gray-900">Betonkemon ("বেতন কেমন?") Crowdsourced Salary Engine</h4>
-                  </div>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Live telemetry parsed from <a href="https://www.betonkemon.com" target="_blank" rel="noreferrer" className="text-emerald-700 underline font-semibold">betonkemon.com</a> — Bangladesh's tech developer compensation benchmark platform.
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleRefreshBetonkemon}
-                  disabled={isRefreshingBetonkemon}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer shrink-0"
-                >
-                  <Zap className={`w-3.5 h-3.5 ${isRefreshingBetonkemon ? 'animate-spin' : ''}`} />
-                  <span>{isRefreshingBetonkemon ? 'Scraping Betonkemon...' : 'Re-crawl betonkemon.com'}</span>
-                </button>
-              </div>
-
-              {/* KPI Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-2">
-                <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Avg Tech Salary</span>
-                  <div className="text-base font-extrabold text-emerald-700 font-mono mt-0.5">
-                    {betonkemonData.summary?.averageSalaryBDT ? betonkemonData.summary.averageSalaryBDT.toLocaleString() : '0'} BDT/mo
-                  </div>
-                  <span className="text-[10px] text-gray-500">Industry Mean</span>
-                </div>
-
-                <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Junior Median</span>
-                  <div className="text-base font-extrabold text-sky-700 font-mono mt-0.5">
-                    {betonkemonData.summary?.juniorMedianBDT ? betonkemonData.summary.juniorMedianBDT.toLocaleString() : '0'} BDT/mo
-                  </div>
-                  <span className="text-[10px] text-gray-500">0 - 2 Yrs Exp</span>
-                </div>
-
-                <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Mid-Level Median</span>
-                  <div className="text-base font-extrabold text-indigo-700 font-mono mt-0.5">
-                    {betonkemonData.summary?.midMedianBDT ? betonkemonData.summary.midMedianBDT.toLocaleString() : '0'} BDT/mo
-                  </div>
-                  <span className="text-[10px] text-gray-500">2 - 5 Yrs Exp</span>
-                </div>
-
-                <div className="bg-white border border-emerald-100 p-3 rounded-xl shadow-2xs">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Senior / Lead Median</span>
-                  <div className="text-base font-extrabold text-purple-700 font-mono mt-0.5">
-                    {betonkemonData.summary?.seniorMedianBDT ? betonkemonData.summary.seniorMedianBDT.toLocaleString() : '0'} BDT/mo
-                  </div>
-                  <span className="text-[10px] text-gray-500">5+ Yrs Exp</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Submissions Table & Filters */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-emerald-600" />
-                  <h4 className="text-sm font-semibold text-gray-900">
-                    Betonkemon Verified Salary Submissions ({
-                      betonkemonData.records.filter(r => {
-                        const matchesSearch = !betonkemonSearch || 
-                          r.company.toLowerCase().includes(betonkemonSearch.toLowerCase()) ||
-                          r.role.toLowerCase().includes(betonkemonSearch.toLowerCase()) ||
-                          (r.techStack || []).some((t: string) => t.toLowerCase().includes(betonkemonSearch.toLowerCase()));
-                        const matchesLevel = betonkemonLevelFilter === 'all' || r.level.toLowerCase().includes(betonkemonLevelFilter.toLowerCase());
-                        return matchesSearch && matchesLevel;
-                      }).length
-                    })
-                  </h4>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Search company or tech stack..."
-                    value={betonkemonSearch}
-                    onChange={(e) => setBetonkemonSearch(e.target.value)}
-                    className="bg-gray-50 border border-gray-200 text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-emerald-500 w-48"
-                  />
-                  <select
-                    value={betonkemonLevelFilter}
-                    onChange={(e) => setBetonkemonLevelFilter(e.target.value)}
-                    className="bg-gray-50 border border-gray-200 text-xs px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-emerald-500 cursor-pointer"
-                  >
-                    <option value="all">All Seniority Levels</option>
-                    <option value="junior">Junior (0-2 Yrs)</option>
-                    <option value="mid">Mid-Level (2-5 Yrs)</option>
-                    <option value="senior">Senior (5+ Yrs)</option>
-                    <option value="lead">Lead / Staff</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Data Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase font-semibold text-[10px]">
-                      <th className="py-2.5 px-3">Company</th>
-                      <th className="py-2.5 px-3">Role &amp; Seniority</th>
-                      <th className="py-2.5 px-3">Experience</th>
-                      <th className="py-2.5 px-3">Monthly Salary (BDT)</th>
-                      <th className="py-2.5 px-3">Tech Stack</th>
-                      <th className="py-2.5 px-3">Work Mode</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100 font-medium">
-                    {paginatedBetonkemonRecords.map((rec) => (
-                      <tr key={rec.id} className="hover:bg-emerald-50/30 transition-colors">
-                        <td className="py-3 px-3 font-semibold text-gray-900">{rec.company}</td>
-                        <td className="py-3 px-3">
-                          <div className="font-semibold text-gray-800">{rec.role}</div>
-                          <div className="text-[10px] text-emerald-700 font-mono">{rec.level}</div>
-                        </td>
-                        <td className="py-3 px-3 text-gray-600 font-mono">{rec.expYears} Yrs</td>
-                        <td className="py-3 px-3">
-                          <span className="font-extrabold text-emerald-700 font-mono bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md text-[11px]">
-                            {rec.monthlySalaryBDT.toLocaleString()} BDT
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {(rec.techStack || []).map((tech: string, tIdx: number) => (
-                              <span key={`${rec.id}-${tech}-${tIdx}`} className="bg-gray-100 border border-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[9px]">
-                                {tech}
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                            rec.workType === 'Remote' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
-                            rec.workType === 'Hybrid' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                            'bg-gray-100 border border-gray-200 text-gray-700'
-                          }`}>
-                            {rec.workType}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-
-                    {paginatedBetonkemonRecords.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="py-8 text-center text-gray-500 text-xs">
-                          No salary submissions match your search filter.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination Controls */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-gray-100 text-xs text-gray-600">
-                <div className="flex items-center gap-3">
-                  <span>
-                    Showing <strong className="text-gray-900 font-mono">{filteredBetonkemonRecords.length > 0 ? (betonkemonPage - 1) * betonkemonPerPage + 1 : 0}</strong> to <strong className="text-gray-900 font-mono">{Math.min(betonkemonPage * betonkemonPerPage, filteredBetonkemonRecords.length)}</strong> of <strong className="text-gray-900 font-mono">{filteredBetonkemonRecords.length.toLocaleString()}</strong> submissions
-                  </span>
-
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-gray-500">Per page:</span>
-                    <select
-                      value={betonkemonPerPage}
-                      onChange={(e) => setBetonkemonPerPage(Number(e.target.value))}
-                      className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs font-semibold focus:outline-none cursor-pointer"
-                    >
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setBetonkemonPage(1)}
-                    disabled={betonkemonPage === 1}
-                    className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
-                    title="First Page"
-                  >
-                    <ChevronsLeft className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button
-                    onClick={() => setBetonkemonPage(prev => Math.max(prev - 1, 1))}
-                    disabled={betonkemonPage === 1}
-                    className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
-                    title="Previous Page"
-                  >
-                    <ChevronLeft className="w-4 h-4 text-gray-600" />
-                  </button>
-
-                  <span className="px-3 py-1 font-mono font-bold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg text-xs">
-                    Page {betonkemonPage} of {totalBetonkemonPages}
-                  </span>
-
-                  <button
-                    onClick={() => setBetonkemonPage(prev => Math.min(prev + 1, totalBetonkemonPages))}
-                    disabled={betonkemonPage === totalBetonkemonPages}
-                    className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
-                    title="Next Page"
-                  >
-                    <ChevronRight className="w-4 h-4 text-gray-600" />
-                  </button>
-                  <button
-                    onClick={() => setBetonkemonPage(totalBetonkemonPages)}
-                    disabled={betonkemonPage === totalBetonkemonPages}
-                    className="p-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer"
-                    title="Last Page"
-                  >
-                    <ChevronsRight className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 1: Role Categories */}
-        {activeSalaryTab === 'roles' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Main Bar Chart comparing ranges side-by-side */}
-            <div className="lg:col-span-8 h-80">
-              {roleSalaryComparison.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={roleSalaryComparison} margin={{ top: 10, right: 10, left: -10, bottom: 5 }}>
-                    <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                    <YAxis 
-                      stroke="#94a3b8" 
-                      fontSize={9} 
-                      tickLine={false} 
-                      tickFormatter={(val) => `${(val / 1000)}k`} 
-                    />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', color: '#111827', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      itemStyle={{ color: '#374151', fontSize: '11px', fontWeight: 500 }}
-                      formatter={(value: any) => [`${Number(value).toLocaleString()} BDT`, '']}
-                    />
-                    <Bar dataKey="min" fill="#3B82F6" name="Minimum Salary" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="average" fill="#6366F1" name="Average Salary" radius={[3, 3, 0, 0]} />
-                    <Bar dataKey="max" fill="#EC4899" name="Maximum Salary" radius={[3, 3, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-xs text-gray-500">
-                  No matching category wage data available under the current filter selection.
-                </div>
-              )}
-            </div>
-
-            {/* Detailed stats grid sidebar */}
-            <div className="lg:col-span-4 flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Salary Telemetry Insights</h4>
-                <p className="text-[11px] text-gray-500 leading-relaxed">
-                  Calculated dynamically from active scraper targets. Blue/Indigo/Pink indicators highlight the wide compensation spectrum across junior and senior engineers in Bangladesh.
-                </p>
-              </div>
-
-              <div className="space-y-3 bg-white border border-gray-200 p-4 rounded-xl">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-600">Salary Disclosure Rate:</span>
-                  <span className="font-bold text-gray-900 font-mono">{overallSalaryTransparency}%</span>
-                </div>
-                <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-indigo-500 rounded-full" 
-                    style={{ width: `${overallSalaryTransparency}%` }} 
-                  />
-                </div>
-                
-                <div className="pt-2 flex flex-col gap-1">
-                  <div className="flex items-center gap-1.5 text-[10px] text-gray-600">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#3B82F6]" />
-                    <span>Blue: Minimum Baseline (Junior/Entry)</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-gray-600">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#6366F1]" />
-                    <span>Indigo: Average Market Salary</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-gray-600">
-                    <span className="w-2.5 h-2.5 rounded-xs bg-[#EC4899]" />
-                    <span>Pink: Maximum/Senior Standard Caps</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl text-[10px] text-gray-600 leading-relaxed font-medium">
-                <strong>Interactive tip:</strong> Hover over any role category bar inside the chart to instantly inspect exact BDT baseline, mean, and ceiling boundaries.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 2: Experience Trajectory Progression */}
-        {activeSalaryTab === 'experience' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Experience Line Chart */}
-            <div className="lg:col-span-8 h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={experienceSalaryComparison} margin={{ top: 10, right: 20, left: -10, bottom: 5 }}>
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                  <YAxis 
-                    stroke="#94a3b8" 
-                    fontSize={9} 
-                    tickLine={false} 
-                    tickFormatter={(val) => `${(val / 1000)}k`} 
-                  />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', color: '#111827', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                    itemStyle={{ color: '#374151', fontSize: '11px', fontWeight: 500 }}
-                    formatter={(value: any) => [`${Number(value).toLocaleString()} BDT`, '']}
-                  />
-                  <Line type="monotone" dataKey="min" stroke="#3B82F6" strokeWidth={2} name="Entry Bounds" activeDot={{ r: 6 }} />
-                  <Line type="monotone" dataKey="average" stroke="#8B5CF6" strokeWidth={3} name="Market Average" activeDot={{ r: 8 }} />
-                  <Line type="monotone" dataKey="max" stroke="#EC4899" strokeWidth={2} name="Senior Standard Caps" activeDot={{ r: 6 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Timeline insights */}
-            <div className="lg:col-span-4 flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider">Experience Scalability</h4>
-                <p className="text-[11px] text-gray-500 leading-relaxed">
-                  This trajectory showcases how technology compensation scales with professional seniority in the Dhaka IT ecosystem. Notice the compounding premium from Mid-level to Senior Expert levels.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                {experienceSalaryComparison.map((item) => (
-                  <div key={item.name} className="bg-white border border-gray-200/60 p-2 px-3 rounded-xl flex items-center justify-between text-xs">
-                    <span className="font-semibold text-gray-800">{item.name}</span>
-                    <div className="text-right">
-                      <div className="font-bold text-indigo-600 font-mono">{item.average.toLocaleString()} BDT</div>
-                      <div className="text-[9px] text-gray-500">Range: {Math.round(item.min/1000)}k - {Math.round(item.max/1000)}k BDT</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl text-[10px] text-gray-600 leading-relaxed font-medium">
-                <strong>Timeline insight:</strong> The sharp incline from Junior (mean: ~50K) to Tech Lead (mean: ~185K+) indicates extremely high returns on specialized system-architecture skills.
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab 3: Interactive Salary Estimator & Benchmarking Tool */}
-        {activeSalaryTab === 'estimator' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeIn">
-            {/* Estimator Configuration Panel */}
-            <div className="lg:col-span-5 bg-white border border-gray-200 p-4 rounded-xl space-y-4">
-              <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                <Sliders className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
-                Configure Target Profile
-              </h4>
-
-              {/* Role Select */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Engineering Role</label>
-                <select
-                  value={estimateRole}
-                  onChange={(e) => setEstimateRole(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-xs text-gray-800 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500/60 transition"
-                >
-                  <option value="frontend">Frontend Engineer</option>
-                  <option value="backend">Backend Engineer</option>
-                  <option value="fullstack">Fullstack Engineer</option>
-                  <option value="mobile">Mobile Application Dev</option>
-                  <option value="devops">DevOps / Cloud Specialist</option>
-                  <option value="qa">QA Engineer / SDET</option>
-                  <option value="product">Product Manager</option>
-                  <option value="design">UI/UX Designer</option>
-                  <option value="other">General IT / Solutions Analyst</option>
-                </select>
-              </div>
-
-              {/* Experience Select */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Experience Profile</label>
-                <select
-                  value={estimateExp}
-                  onChange={(e) => setEstimateExp(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-xs text-gray-800 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500/60 transition"
-                >
-                  <option value="intern">Intern / Trainee</option>
-                  <option value="junior">Junior Developer (1-2 years)</option>
-                  <option value="mid">Mid-Level Engineer (2-4 years)</option>
-                  <option value="senior">Senior Specialist (5+ years)</option>
-                  <option value="lead">Technical Lead / VP / Architect</option>
-                </select>
-              </div>
-
-              {/* Work Mode Select */}
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Work Pattern</label>
-                <select
-                  value={estimateMode}
-                  onChange={(e) => setEstimateMode(e.target.value)}
-                  className="w-full bg-gray-50 border border-gray-200 text-xs text-gray-800 px-3 py-2 rounded-lg focus:outline-none focus:border-indigo-500/60 transition"
-                >
-                  <option value="onsite">Fully On-Site</option>
-                  <option value="hybrid">Hybrid Environment (+8% premium)</option>
-                  <option value="remote">100% WFH / Remote (+22% premium)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Estimator Dynamic Prediction Panel */}
-            <div className="lg:col-span-7 bg-white/40 border border-gray-200 p-5 rounded-xl flex flex-col justify-between space-y-5">
-              <div>
-                <span className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider bg-indigo-500/5 border border-indigo-500/10 px-2.5 py-1 rounded-full">
-                  Estimated Monthly Compensation
-                </span>
-                
-                <div className="mt-3.5 flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-gray-900 tracking-tight">
-                    {estimatedSalaryDetails.average.toLocaleString()} <span className="text-sm font-semibold text-gray-600">BDT</span>
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 mt-1">
-                  Expected baseline range: <strong className="text-gray-800 font-mono">{estimatedSalaryDetails.min.toLocaleString()} BDT</strong> to <strong className="text-gray-800 font-mono">{estimatedSalaryDetails.max.toLocaleString()} BDT</strong>.
-                </p>
-              </div>
-
-              {/* Custom dynamic progress bar */}
-              <div className="space-y-3 bg-gray-50 border border-gray-200/60 p-4 rounded-xl">
-                <h5 className="text-[10px] font-bold text-gray-600 uppercase tracking-wider">Dhaka Tech Market Percentiles</h5>
-                
-                <div className="space-y-2">
-                  {/* P25 */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-gray-500">
-                      <span>25th Percentile (Conservative)</span>
-                      <span className="font-mono text-gray-800">{estimatedSalaryDetails.percentiles.p25.toLocaleString()} BDT</span>
-                    </div>
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-blue-500 rounded-full" style={{ width: '40%' }} />
-                    </div>
-                  </div>
-
-                  {/* P50 */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-gray-500">
-                      <span>50th Percentile (Median Market standard)</span>
-                      <span className="font-mono text-gray-800">{estimatedSalaryDetails.percentiles.p50.toLocaleString()} BDT</span>
-                    </div>
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-500 rounded-full" style={{ width: '65%' }} />
-                    </div>
-                  </div>
-
-                  {/* P75 */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-[10px] text-gray-500">
-                      <span>75th Percentile (Aggressive / High-Performer)</span>
-                      <span className="font-mono text-gray-800">{estimatedSalaryDetails.percentiles.p75.toLocaleString()} BDT</span>
-                    </div>
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                      <div className="h-full bg-pink-500 rounded-full" style={{ width: '85%' }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-[10px] text-gray-500 leading-relaxed font-medium">
-                *Multipliers and baseline wages are calibrated dynamically against crawled Bangladesh IT clusters and standard local recruiter guides.
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Tab 4: Interactive Role-Specific Salary Distribution Curve */}
-        {activeSalaryTab === 'distribution' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeIn">
-            
-            {/* Left side: Area Chart of Probability Density */}
-            <div className="lg:col-span-7 bg-white border border-gray-200 p-5 rounded-xl flex flex-col justify-between space-y-4">
-              <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
-                  <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                    <TrendingUp className="w-4 h-4 text-emerald-600 animate-pulse" />
-                    Salary Probability Density Curve
-                  </h4>
-                  
-                  {/* Selector for the specific role to graph */}
-                  <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-lg">
-                    <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Role:</label>
-                    <select
-                      value={distSelectedRole}
-                      onChange={(e) => setDistSelectedRole(e.target.value)}
-                      className="bg-transparent text-xs text-emerald-600 focus:outline-none font-semibold cursor-pointer"
-                    >
-                      <option value="frontend">Frontend</option>
-                      <option value="backend">Backend</option>
-                      <option value="fullstack">Fullstack</option>
-                      <option value="mobile">Mobile Dev</option>
-                      <option value="devops">DevOps</option>
-                      <option value="qa">QA / Testing</option>
-                      <option value="product">Product Mgt</option>
-                      <option value="design">UI/UX Design</option>
-                      <option value="other">Other Tech</option>
-                    </select>
-                  </div>
-                </div>
-                <p className="text-[11px] text-gray-500">
-                  Interactive mathematical normal bell distribution representing the probability density of landing various salary ranges for <strong>{selectedDistRoleStats.name}</strong> jobs in Bangladesh.
-                </p>
-              </div>
-
-              {/* Density Area Chart */}
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={selectedDistRoleStats.curveData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorDensity" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <defs>
-                      <linearGradient id="colorDensity" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="salaryFormatted" stroke="#94a3b8" fontSize={9} tickLine={false} />
-                    <YAxis stroke="#94a3b8" fontSize={8} tickLine={false} tickFormatter={() => ''} width={15} label={{ value: 'Probability Density', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 8 }} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e5e7eb', borderRadius: '12px', color: '#111827', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      itemStyle={{ color: '#374151', fontSize: '11px', fontWeight: 500 }}
-                      formatter={(value: any, name: any, props: any) => [
-                        `${Number(props.payload.salary).toLocaleString()} BDT`,
-                        'Estimated Bracket'
-                      ]}
-                      labelFormatter={() => `Market Density Node`}
-                    />
-                    <Area type="monotone" dataKey="density" stroke="#10B981" strokeWidth={2} fillOpacity={1} fill="url(#colorDensity)" name="Density Match Likelihood" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              <div className="flex justify-between items-center text-[10px] text-gray-600 bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg">
-                <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> Peak indicates standard median hire zone.</span>
-                <span className="font-semibold text-emerald-600 font-mono">Sample Count: {selectedDistRoleStats.count || 'Market Baseline'}</span>
-              </div>
-            </div>
-
-            {/* Right side: Percentiles, Benchmarks, Recommendations */}
-            <div className="lg:col-span-5 space-y-4">
-              <div className="bg-white border border-gray-200 p-4 rounded-xl space-y-3">
-                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-indigo-600" />
-                  Key Percentile Benchmarks
-                </h4>
-                
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg space-y-1">
-                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">10th Percentile (Junior)</span>
-                    <div className="text-xs font-bold text-gray-800 font-mono">{(selectedDistRoleStats?.p10 ?? 0).toLocaleString()} BDT</div>
-                    <p className="text-[9px] text-gray-500 leading-tight">Starting baseline standard for entry hires.</p>
-                  </div>
-
-                  <div className="bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg space-y-1">
-                    <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">50th Percentile (Median)</span>
-                    <div className="text-xs font-bold text-indigo-300 font-mono">{(selectedDistRoleStats?.p50 ?? 0).toLocaleString()} BDT</div>
-                    <p className="text-[9px] text-gray-500 leading-tight">Average rate for stable mid-level engineers.</p>
-                  </div>
-
-                  <div className="bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg space-y-1">
-                    <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">90th Percentile (Senior)</span>
-                    <div className="text-xs font-bold text-purple-300 font-mono">{(selectedDistRoleStats?.p90 ?? 0).toLocaleString()} BDT</div>
-                    <p className="text-[9px] text-gray-500 leading-tight">Upper standard standard for senior architects.</p>
-                  </div>
-
-                  <div className="bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg space-y-1">
-                    <span className="text-[9px] font-bold text-pink-400 uppercase tracking-wider">99th Percentile (Elite Top 1%)</span>
-                    <div className="text-xs font-bold text-pink-300 font-mono">{(selectedDistRoleStats?.p99 ?? 0).toLocaleString()} BDT</div>
-                    <p className="text-[9px] text-gray-500 leading-tight">Elite global partners &amp; remote contractors.</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Skills Recommendation card */}
-              <div className="bg-white border border-gray-200 p-4 rounded-xl space-y-3">
-                <h4 className="text-xs font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                  Recommended High-Income Stack
-                </h4>
-                <p className="text-[10px] text-gray-500 leading-relaxed">
-                  These programming languages, libraries, and protocols are highly correlated with top-percentile wage brackets in Bangladesh tech clusters for <strong>{selectedDistRoleStats?.name || 'Selected Role'}</strong> positions.
-                </p>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {(selectedDistRoleStats?.hotTechs || []).map((tech, idx) => (
-                    <span 
-                      key={`${tech}-${idx}`} 
-                      className="bg-amber-500/5 border border-amber-500/20 text-amber-600 text-[10px] px-2.5 py-1 rounded font-medium shadow-xs"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-          </div>
-        )}
+      {/* Unified Betonkemon & Bangladesh Tech Salary Intelligence Engine */}
+      <div id="salary-comparison-detailed-section">
+        <SalaryAnalytics companies={companies} jobs={jobs} />
       </div>
 
       {/* Narrative Strategic Perspectives Panel */}
@@ -2632,6 +1711,20 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
           </div>
         </div>
       </div>
+
+      {/* Interactive Drilldown Detail Modal */}
+      <DetailModal
+        isOpen={modalState.isOpen}
+        onClose={closeModal}
+        title={modalState.title}
+        subtitle={modalState.subtitle}
+        icon={modalState.icon}
+        badge={modalState.badge}
+        jobs={modalState.jobs}
+        allJobs={jobs}
+        companyProfile={modalState.companyProfile}
+        statsSummary={modalState.statsSummary}
+      />
 
     </div>
   );
