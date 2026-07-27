@@ -11,6 +11,7 @@ import { createServer as createViteServer } from 'vite';
 import vm from 'vm';
 import dotenv from 'dotenv';
 import * as cheerio from 'cheerio';
+import { generateEmailHtml } from './src/utils/emailTemplate';
 
 dotenv.config();
 
@@ -2609,9 +2610,13 @@ app.post('/api/scrape-bulk', async (req, res) => {
 interface Subscriber {
   id: string;
   email: string;
-  frequency: string;
+  frequency: string; // 'daily' | 'weekly'
   categories: string[];
-  roles: string[];
+  experienceLevels: string[];
+  workModes: string[];
+  locations: string[];
+  maxJobs: number;
+  templateTheme: 'modern-indigo' | 'minimal-dark' | 'emerald-clean' | 'royal-violet';
   subscribedAt: string;
   active: boolean;
 }
@@ -2640,54 +2645,98 @@ function saveSubscribers(): void {
   }
 }
 
+// Helper: Filter jobs based on subscriber preferences
+function filterJobsForSubscriber(subscriber: Subscriber, allJobs: any[]): { jobs: any[]; isFallback: boolean; summary: string } {
+  let matched = allJobs.filter(job => {
+    // Categories filter
+    if (Array.isArray(subscriber.categories) && subscriber.categories.length > 0 && !subscriber.categories.includes('all')) {
+      if (!subscriber.categories.includes(job.category)) return false;
+    }
+
+    // Experience filter
+    if (Array.isArray(subscriber.experienceLevels) && subscriber.experienceLevels.length > 0 && !subscriber.experienceLevels.includes('all')) {
+      if (!subscriber.experienceLevels.includes(job.experienceLevel)) return false;
+    }
+
+    // Work Mode filter
+    if (Array.isArray(subscriber.workModes) && subscriber.workModes.length > 0 && !subscriber.workModes.includes('all')) {
+      const typeLower = (job.type || '').toLowerCase();
+      const matchMode = subscriber.workModes.some(m => {
+        if (m === 'remote') return typeLower.includes('remote');
+        if (m === 'hybrid') return typeLower.includes('hybrid');
+        if (m === 'onsite') return !typeLower.includes('remote') && !typeLower.includes('hybrid');
+        return true;
+      });
+      if (!matchMode) return false;
+    }
+
+    // Location filter
+    if (Array.isArray(subscriber.locations) && subscriber.locations.length > 0 && !subscriber.locations.includes('all')) {
+      const locLower = (job.location || '').toLowerCase();
+      const matchLoc = subscriber.locations.some(l => locLower.includes(l.toLowerCase()));
+      if (!matchLoc) return false;
+    }
+
+    return true;
+  });
+
+  const limit = subscriber.maxJobs || 10;
+  if (matched.length > 0) {
+    return {
+      jobs: matched.slice(0, limit),
+      isFallback: false,
+      summary: `Filtered (${matched.length} matches)`
+    };
+  }
+
+  // Fallback to top overall jobs if no exact criteria match today
+  return {
+    jobs: allJobs.slice(0, Math.min(8, limit)),
+    isFallback: true,
+    summary: 'Top Openings Across BD'
+  };
+}
+
 // Helper: Build HTML email digest for cron newsletter
-function buildDigestHtmlForSubscriber(subscriberEmail: string, jobs: any[]) {
-  const topJobs = jobs.slice(0, 8);
-  const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+function buildDigestHtmlForSubscriber(subscriber: Subscriber | string, jobs: any[]) {
+  const recipientEmail = typeof subscriber === 'string' ? subscriber : subscriber.email;
+  const theme = typeof subscriber === 'string' ? 'modern-indigo' : (subscriber.templateTheme || 'modern-indigo');
 
-  const jobCardsHtml = topJobs.map(job => `
-    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; margin-bottom: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <h3 style="margin: 0 0 6px 0; color: #111827; font-size: 16px; font-weight: 700;">${job.title || 'Software Engineer'}</h3>
-        <span style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600;">${job.type || 'Full-time'}</span>
-      </div>
-      <p style="margin: 0 0 10px 0; color: #4b5563; font-size: 14px; font-weight: 600;">🏢 ${job.companyName} • 📍 ${job.location || 'Dhaka, Bangladesh'}</p>
-      ${job.summary ? `<p style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px; line-height: 1.5;">${job.summary.substring(0, 160)}...</p>` : ''}
-      <a href="${job.link}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px;">Apply Now →</a>
-    </div>
-  `).join('');
+  let targetJobs = jobs;
+  let isFallback = false;
+  let filterSummary = 'Daily Curated Tech Jobs';
 
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head><meta charset="utf-8"/></head>
-    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 24px;">
-      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
-        <div style="background-color: #4f46e5; padding: 28px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">🚀 Daily BD Tech Job Digest</h1>
-          <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 14px;">${dateStr}</p>
-        </div>
-        <div style="padding: 24px;">
-          <p style="color: #374151; font-size: 15px; margin-top: 0;">Hi subscriber,</p>
-          <p style="color: #4b5563; font-size: 14px; line-height: 1.6;">Here are the top active tech job openings scanned across major tech companies in Bangladesh today:</p>
-          ${jobCardsHtml}
-          <div style="text-align: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid #f3f4f6;">
-            <a href="https://techhub.bd/" style="color: #4f46e5; font-weight: 600; text-decoration: none; font-size: 14px;">View All Active Openings on BD Tech Hub →</a>
-          </div>
-        </div>
-        <div style="background-color: #f9fafb; padding: 16px; text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #f3f4f6;">
-          Sent with ❤️ by BD Tech Hub Scraper Automation. You received this because ${subscriberEmail} is subscribed to daily alerts.
-        </div>
-      </div>
-    </body>
-    </html>
-  `;
+  if (typeof subscriber !== 'string') {
+    const filterRes = filterJobsForSubscriber(subscriber, jobs);
+    targetJobs = filterRes.jobs;
+    isFallback = filterRes.isFallback;
+    filterSummary = filterRes.summary;
+  } else {
+    targetJobs = jobs.slice(0, 10);
+  }
+
+  return generateEmailHtml({
+    jobs: targetJobs,
+    recipientEmail,
+    theme,
+    filterSummary,
+    isFallback
+  });
 }
 
 // API Route: Save New Email Subscription
 app.post('/api/subscribe', (req, res) => {
   try {
-    const { email, frequency = 'daily', categories = [], roles = [] } = req.body;
+    const {
+      email,
+      frequency = 'daily',
+      categories = ['all'],
+      experienceLevels = ['all'],
+      workModes = ['all'],
+      locations = ['all'],
+      maxJobs = 10,
+      templateTheme = 'modern-indigo'
+    } = req.body;
 
     if (!email || typeof email !== 'string' || !email.includes('@')) {
       return res.status(400).json({ error: 'Valid email address is required.' });
@@ -2696,21 +2745,24 @@ app.post('/api/subscribe', (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
     const existingIndex = subscribersList.findIndex(s => s.email.toLowerCase() === normalizedEmail);
 
+    const updatedSubscriber: Subscriber = {
+      id: existingIndex !== -1 ? subscribersList[existingIndex].id : `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      email: normalizedEmail,
+      frequency,
+      categories: Array.isArray(categories) ? categories : [categories],
+      experienceLevels: Array.isArray(experienceLevels) ? experienceLevels : [experienceLevels],
+      workModes: Array.isArray(workModes) ? workModes : [workModes],
+      locations: Array.isArray(locations) ? locations : [locations],
+      maxJobs: Number(maxJobs) || 10,
+      templateTheme: templateTheme || 'modern-indigo',
+      subscribedAt: existingIndex !== -1 ? subscribersList[existingIndex].subscribedAt : new Date().toISOString(),
+      active: true
+    };
+
     if (existingIndex !== -1) {
-      subscribersList[existingIndex].active = true;
-      subscribersList[existingIndex].frequency = frequency;
-      subscribersList[existingIndex].categories = categories;
-      subscribersList[existingIndex].roles = roles;
+      subscribersList[existingIndex] = updatedSubscriber;
     } else {
-      subscribersList.push({
-        id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-        email: normalizedEmail,
-        frequency,
-        categories,
-        roles,
-        subscribedAt: new Date().toISOString(),
-        active: true
-      });
+      subscribersList.push(updatedSubscriber);
     }
 
     saveSubscribers();
@@ -2720,12 +2772,30 @@ app.post('/api/subscribe', (req, res) => {
     return res.json({
       success: true,
       message: `Successfully subscribed ${normalizedEmail} to automated job alerts!`,
+      subscriber: updatedSubscriber,
       totalSubscribers: subscribersList.filter(s => s.active).length
     });
   } catch (err) {
     console.error('Error saving subscription:', err);
     return res.status(500).json({ error: 'Failed to process email subscription.' });
   }
+});
+
+// API Route: Unsubscribe
+app.all(['/api/unsubscribe'], (req, res) => {
+  const email = req.query.email || req.body?.email;
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ error: 'Email parameter required.' });
+  }
+
+  const normalized = email.trim().toLowerCase();
+  const index = subscribersList.findIndex(s => s.email.toLowerCase() === normalized);
+  if (index !== -1) {
+    subscribersList[index].active = false;
+    saveSubscribers();
+  }
+
+  return res.json({ success: true, message: `${normalized} has been unsubscribed from job alerts.` });
 });
 
 // API Route: Get Subscribers List & Stats
