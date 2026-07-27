@@ -104,7 +104,9 @@ export function EmailDigestSection({ jobs, initialCategory = 'all' }: EmailDiges
 </html>`;
   }, [filteredJobs]);
 
-  const handleSendManualEmail = (e: React.FormEvent) => {
+  const [dispatchMessage, setDispatchMessage] = useState<string | null>(null);
+
+  const handleSendManualEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recipientEmail || !recipientEmail.includes('@')) {
       alert('Please enter a valid email address.');
@@ -113,13 +115,34 @@ export function EmailDigestSection({ jobs, initialCategory = 'all' }: EmailDiges
 
     setIsSending(true);
     setSendSuccess(false);
+    setDispatchMessage(null);
 
-    // Simulate server-side API email dispatch (Nodemailer / Resend integration)
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/send-job-digest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientEmail,
+          subject: emailSubject || `Daily BD Tech Job Digest (${filteredJobs.length} Positions)`,
+          htmlContent: generatedEmailHtml,
+          jobCount: filteredJobs.length
+        })
+      });
+
+      const data = await response.json();
       setIsSending(false);
-      setSendSuccess(true);
-      setTimeout(() => setSendSuccess(false), 6000);
-    }, 1200);
+
+      if (response.ok && data.success) {
+        setSendSuccess(true);
+        setDispatchMessage(data.message || `Delivered ${filteredJobs.length} filtered jobs to ${recipientEmail}`);
+        setTimeout(() => setSendSuccess(false), 8000);
+      } else {
+        alert(data.error || 'Failed to dispatch email digest.');
+      }
+    } catch (err) {
+      setIsSending(false);
+      alert('Network error connecting to email API service.');
+    }
   };
 
   const handleSaveSubscription = (e: React.FormEvent) => {
@@ -283,7 +306,7 @@ export function EmailDigestSection({ jobs, initialCategory = 'all' }: EmailDiges
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-medium flex items-center gap-2 animate-in fade-in">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                 <div>
-                  <strong>Email digest sent successfully!</strong> Delivered {filteredJobs.length} filtered jobs to <span className="font-mono">{recipientEmail}</span>.
+                  <strong>Email digest status:</strong> {dispatchMessage || `Delivered ${filteredJobs.length} filtered jobs to ${recipientEmail}.`}
                 </div>
               </div>
             )}

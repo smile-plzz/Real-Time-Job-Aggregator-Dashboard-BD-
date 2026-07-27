@@ -1,0 +1,19 @@
+name: Daily Scraper & Email Digest Cron
+
+on:
+  schedule:
+    # Runs at 03:00 UTC every day (09:00 AM Bangladesh Standard Time)
+    - cron: '0 3 * * *'
+  # Allows manual triggering from the GitHub Actions UI tab anytime
+  workflow_dispatch:
+
+jobs:
+  wake-scraper-and-send-email:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render / App Service Endpoint
+        run: |
+          echo "Waking up scraper and triggering daily email digest..."
+          curl -X POST "${{ secrets.RENDER_APP_URL || 'https://your-app.onrender.com' }}/api/cron/daily-digest" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET || 'default_secret_token' }}" \
+            -H "Content-Type: application/json"

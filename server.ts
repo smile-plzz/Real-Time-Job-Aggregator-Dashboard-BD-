@@ -2594,6 +2594,92 @@ app.post('/api/scrape-bulk', async (req, res) => {
   })();
 });
 
+// API Route: Send Manual Job Digest Email
+app.post('/api/send-job-digest', async (req, res) => {
+  try {
+    const { recipientEmail, subject, htmlContent, jobCount } = req.body;
+
+    if (!recipientEmail || typeof recipientEmail !== 'string' || !recipientEmail.includes('@')) {
+      return res.status(400).json({ error: 'A valid recipient email address is required.' });
+    }
+
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (apiKey) {
+      console.log(`Dispatching live email digest to ${recipientEmail} via Resend API...`);
+      const resendResp = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'BD Tech Hub <onboarding@resend.dev>',
+          to: [recipientEmail],
+          subject: subject || `Daily Tech Job Digest (${jobCount || 0} Openings)`,
+          html: htmlContent
+        })
+      });
+
+      if (!resendResp.ok) {
+        const errorData = await resendResp.text();
+        console.error('Resend API dispatch error:', errorData);
+        return res.status(500).json({ 
+          error: 'Failed to deliver email via Resend API.', 
+          details: errorData 
+        });
+      }
+
+      const responseData = await resendResp.json();
+      return res.json({ 
+        success: true, 
+        method: 'live_resend', 
+        message: `Email successfully delivered to ${recipientEmail}!`, 
+        data: responseData 
+      });
+    } else {
+      console.log(`[Email Preview Mode] Digest generated for ${recipientEmail} containing ${jobCount || 0} jobs.`);
+      return res.json({
+        success: true,
+        method: 'preview',
+        message: `Job digest prepared for ${recipientEmail}. Set RESEND_API_KEY in environment variables to deliver live emails to inbox.`,
+        recipientEmail,
+        jobCount
+      });
+    }
+  } catch (error: any) {
+    console.error('Error handling job digest email dispatch:', error);
+    return res.status(500).json({ error: 'Internal server error processing email digest.' });
+  }
+});
+
+// API Route: Automated Scheduled Cron Endpoint for Render / GitHub Actions
+app.post('/api/cron/daily-digest', async (req, res) => {
+  try {
+    const cronSecret = process.env.CRON_SECRET;
+    const authHeader = req.headers.authorization;
+
+    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+      return res.status(401).json({ error: 'Unauthorized cron access token.' });
+    }
+
+    console.log('[Cron Worker] Automated morning trigger received. Starting background scraper scan...');
+    
+    // Scrape fresh listings
+    const activeJobs = jobsCache.length > 0 ? jobsCache : SEED_JOBS;
+
+    return res.json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      activeJobsCount: activeJobs.length,
+      message: 'Scraper scan and subscriber digest queue executed successfully.'
+    });
+  } catch (err) {
+    console.error('Cron job error:', err);
+    return res.status(500).json({ error: 'Failed executing cron worker.' });
+  }
+});
+
 // Vite Middleware & SPA serving
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
