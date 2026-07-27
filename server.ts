@@ -2814,7 +2814,7 @@ app.get('/api/subscribers', (req, res) => {
 // API Route: Send Manual Job Digest Email
 app.post('/api/send-job-digest', async (req, res) => {
   try {
-    const { recipientEmail, subject, htmlContent, jobCount } = req.body;
+    const { recipientEmail, subject, htmlContent, jobCount, csvContent } = req.body;
 
     if (!recipientEmail || typeof recipientEmail !== 'string' || !recipientEmail.includes('@')) {
       return res.status(400).json({ error: 'A valid recipient email address is required.' });
@@ -2822,8 +2822,19 @@ app.post('/api/send-job-digest', async (req, res) => {
 
     const apiKey = process.env.RESEND_API_KEY;
 
+    const attachments: Array<{ filename: string; content: string }> = [];
+    if (csvContent && typeof csvContent === 'string') {
+      const base64Content = Buffer.from(csvContent).toString('base64');
+      attachments.push({
+        filename: `scraped_tech_jobs_${new Date().toISOString().slice(0, 10)}.csv`,
+        content: base64Content
+      });
+    } else if (req.body.attachments && Array.isArray(req.body.attachments)) {
+      attachments.push(...req.body.attachments);
+    }
+
     if (apiKey) {
-      console.log(`Dispatching live email digest to ${recipientEmail} via Resend API...`);
+      console.log(`Dispatching live email digest to ${recipientEmail} via Resend API (CSV attached: ${attachments.length > 0})...`);
       const resendResp = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
@@ -2834,7 +2845,8 @@ app.post('/api/send-job-digest', async (req, res) => {
           from: 'BD Tech Hub <onboarding@resend.dev>',
           to: [recipientEmail],
           subject: subject || `Daily Tech Job Digest (${jobCount || 0} Openings)`,
-          html: htmlContent
+          html: htmlContent,
+          attachments: attachments.length > 0 ? attachments : undefined
         })
       });
 
@@ -2851,7 +2863,7 @@ app.post('/api/send-job-digest', async (req, res) => {
       return res.json({ 
         success: true, 
         method: 'live_resend', 
-        message: `Email successfully delivered to ${recipientEmail}!`, 
+        message: `Email successfully delivered to ${recipientEmail}${attachments.length > 0 ? ' (with CSV file attached)' : ''}!`, 
         data: responseData 
       });
     } else {
@@ -2859,9 +2871,10 @@ app.post('/api/send-job-digest', async (req, res) => {
       return res.json({
         success: true,
         method: 'preview',
-        message: `Job digest prepared for ${recipientEmail}. Set RESEND_API_KEY in environment variables to deliver live emails to inbox.`,
+        message: `Job digest prepared for ${recipientEmail}${attachments.length > 0 ? ' (with CSV file attached)' : ''}. Set RESEND_API_KEY in environment variables to deliver live emails to inbox.`,
         recipientEmail,
-        jobCount
+        jobCount,
+        hasCsvAttachment: attachments.length > 0
       });
     }
   } catch (error: any) {
