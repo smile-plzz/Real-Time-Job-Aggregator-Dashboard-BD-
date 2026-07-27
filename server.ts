@@ -608,50 +608,9 @@ async function loadSalaryDataFromBetonkemon() {
       { id: "bk-25", company: "Augmedix BD", role: "Lead Data Engineer", category: "backend", level: "Lead / Architect", expYears: 7, monthlySalaryBDT: 270000, techStack: ["Python", "Spark", "AWS", "SQL"], workType: "Hybrid" }
     ];
 
-    // Merge default entries if live scraping returned few/no records due to Cloudflare/Vercel protection
-    if (liveRecords.length < 10) {
+    // Merge default entries if live scraping returned few records
+    if (liveRecords.length < 5) {
       liveRecords = [...liveRecords, ...defaultBetonkemonSubmissions];
-    }
-
-    // Expand company benchmark records across registered firms in companiesCache
-    const existingCompanyNames = new Set(liveRecords.map(r => r.company.toLowerCase()));
-    
-    if (companiesCache && companiesCache.length > 0) {
-      const rolesList = [
-        { role: "Software Engineer", category: "backend", level: "Mid-Level", expYears: 3, baseBDT: 110000, stack: ["Node.js", "PostgreSQL", "AWS"], work: "Hybrid" },
-        { role: "Junior Developer", category: "fullstack", level: "Junior (0-2 Yrs)", expYears: 1.5, baseBDT: 58000, stack: ["React", "JavaScript", "Express"], work: "On-site" },
-        { role: "Senior Engineer", category: "fullstack", level: "Senior (5+ Yrs)", expYears: 6, baseBDT: 195000, stack: ["React", "TypeScript", "Node.js"], work: "Hybrid" },
-        { role: "Backend Architect", category: "backend", level: "Lead / Architect", expYears: 8, baseBDT: 280000, stack: ["Go", "Microservices", "Docker"], work: "Hybrid" },
-        { role: "DevOps Engineer", category: "devops", level: "Senior (5+ Yrs)", expYears: 5, baseBDT: 215000, stack: ["Kubernetes", "AWS", "Docker"], work: "Remote" },
-        { role: "Mobile Engineer", category: "mobile", level: "Mid-Level", expYears: 3.5, baseBDT: 120000, stack: ["Flutter", "Dart", "Firebase"], work: "Hybrid" },
-        { role: "SQA Engineer", category: "sqa", level: "Mid-Level", expYears: 3, baseBDT: 85000, stack: ["Selenium", "Postman", "Cypress"], work: "On-site" },
-        { role: "Frontend Developer", category: "frontend", level: "Mid-Level", expYears: 2.5, baseBDT: 105000, stack: ["Vue.js", "Tailwind", "JavaScript"], work: "Hybrid" },
-      ];
-
-      companiesCache.slice(0, 150).forEach((comp, idx) => {
-        if (!existingCompanyNames.has(comp.name.toLowerCase())) {
-          const rolePreset = rolesList[idx % rolesList.length];
-          let salaryMultiplier = 1.0;
-          if (comp.name.includes("PLC") || comp.name.includes("Limited") || comp.name.includes("Group")) salaryMultiplier = 1.12;
-          if (["ShopUp", "Pathao", "Appscode", "Therap", "Cefalo", "Selise", "Optimizely", "Enosis", "Brain Station 23"].some(top => comp.name.toLowerCase().includes(top.toLowerCase()))) {
-            salaryMultiplier = 1.45;
-          }
-
-          const calculatedSalary = Math.round(rolePreset.baseBDT * salaryMultiplier);
-
-          liveRecords.push({
-            id: `bk-comp-${idx}`,
-            company: comp.name,
-            role: rolePreset.role,
-            category: rolePreset.category,
-            level: rolePreset.level,
-            expYears: rolePreset.expYears,
-            monthlySalaryBDT: calculatedSalary,
-            techStack: comp.technologies && comp.technologies.length > 0 ? comp.technologies : rolePreset.stack,
-            workType: rolePreset.work
-          });
-        }
-      });
     }
 
     // Deduplicate scraped records by company + role + salary
@@ -2256,6 +2215,87 @@ app.get('/api/betonkemon-salaries', async (req, res) => {
     await loadSalaryDataFromBetonkemon();
   }
   res.json(betonkemonSalaryCache);
+});
+
+// API: Submit real salary report to Betonkemon dataset
+app.post('/api/betonkemon-salaries/submit', async (req, res) => {
+  try {
+    const { company, role, category, level, expYears, monthlySalaryBDT, techStack, workType } = req.body;
+    
+    if (!company || !role || !monthlySalaryBDT) {
+      return res.status(400).json({ error: 'Company, role, and monthly salary are required.' });
+    }
+
+    const newRecord = {
+      id: `bk-user-sub-${Date.now()}`,
+      company: String(company).trim(),
+      role: String(role).trim(),
+      category: String(category || 'fullstack').toLowerCase(),
+      level: String(level || 'Mid-Level'),
+      expYears: Number(expYears) || 2,
+      monthlySalaryBDT: Number(monthlySalaryBDT),
+      techStack: Array.isArray(techStack) ? techStack : [String(techStack || 'Engineering')],
+      workType: String(workType || 'Hybrid')
+    };
+
+    if (!betonkemonSalaryCache.records) {
+      betonkemonSalaryCache.records = [];
+    }
+
+    betonkemonSalaryCache.records.unshift(newRecord);
+
+    // Recompute telemetry statistics
+    const liveRecords = betonkemonSalaryCache.records;
+    const totalSalarySum = liveRecords.reduce((acc, r) => acc + r.monthlySalaryBDT, 0);
+    const avgSalaryBDT = liveRecords.length > 0 ? Math.round(totalSalarySum / liveRecords.length) : 0;
+
+    const juniorSalaries = liveRecords.filter(r => r.monthlySalaryBDT < 75000).map(r => r.monthlySalaryBDT);
+    const midSalaries = liveRecords.filter(r => r.monthlySalaryBDT >= 75000 && r.monthlySalaryBDT < 150000).map(r => r.monthlySalaryBDT);
+    const seniorSalaries = liveRecords.filter(r => r.monthlySalaryBDT >= 150000).map(r => r.monthlySalaryBDT);
+
+    const calcMedian = (arr: number[]) => {
+      if (arr.length === 0) return 0;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+    };
+
+    const companySalaryMap = new Map<string, number[]>();
+    liveRecords.forEach(r => {
+      const arr = companySalaryMap.get(r.company) || [];
+      arr.push(r.monthlySalaryBDT);
+      companySalaryMap.set(r.company, arr);
+    });
+
+    const topPaying = Array.from(companySalaryMap.entries())
+      .map(([name, salaries]) => ({
+        name,
+        avgSalaryBDT: Math.round(salaries.reduce((a, b) => a + b, 0) / salaries.length)
+      }))
+      .sort((a, b) => b.avgSalaryBDT - a.avgSalaryBDT)
+      .slice(0, 10);
+
+    betonkemonSalaryCache.summary = {
+      totalSubmissions: liveRecords.length,
+      averageSalaryBDT: avgSalaryBDT,
+      juniorMedianBDT: calcMedian(juniorSalaries),
+      midMedianBDT: calcMedian(midSalaries),
+      seniorMedianBDT: calcMedian(seniorSalaries),
+      highestReportedBDT: liveRecords.length > 0 ? Math.max(...liveRecords.map(r => r.monthlySalaryBDT)) : 0,
+      lowestReportedBDT: liveRecords.length > 0 ? Math.min(...liveRecords.map(r => r.monthlySalaryBDT)) : 0,
+      topPayingCompanies: topPaying
+    };
+    betonkemonSalaryCache.lastUpdated = new Date().toISOString();
+
+    res.json({
+      success: true,
+      message: 'Salary submission recorded successfully!',
+      record: newRecord,
+      cache: betonkemonSalaryCache
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || 'Failed to submit salary report' });
+  }
 });
 
 // API: Force re-scrape Betonkemon live data

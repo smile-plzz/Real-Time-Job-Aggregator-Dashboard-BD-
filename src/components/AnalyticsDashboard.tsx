@@ -28,9 +28,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { CompanyMap } from './CompanyMap';
+import { SalaryAnalytics } from './SalaryAnalytics';
 
 interface AnalyticsDashboardProps {
   companies: Company[];
@@ -39,6 +42,7 @@ interface AnalyticsDashboardProps {
 
 export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboardProps) {
   const [showMap, setShowMap] = useState<boolean>(false);
+  const [isSalaryAnalyticsOpen, setIsSalaryAnalyticsOpen] = useState<boolean>(false);
   // --- Filter States ---
   const [selectedExperience, setSelectedExperience] = useState<string>('all');
   const [selectedWorkMode, setSelectedWorkMode] = useState<string>('all');
@@ -538,8 +542,9 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
   }, [filteredJobs]);
 
   const bestPayingRole = useMemo(() => {
-    if (roleSalaryComparison.length === 0) return { name: 'N/A', val: '0 BDT' };
-    const sorted = [...roleSalaryComparison].sort((a, b) => b.average - a.average);
+    const valid = roleSalaryComparison.filter(r => r.average > 0);
+    if (valid.length === 0) return { name: 'N/A', val: '0 BDT' };
+    const sorted = [...valid].sort((a, b) => b.average - a.average);
     return { name: sorted[0].name, val: `${sorted[0].average.toLocaleString()} BDT` };
   }, [roleSalaryComparison]);
 
@@ -573,10 +578,28 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
     const avgVal = stats.average;
     const maxVal = stats.max;
 
+    // Tech-stack recommendation mappings
+    const hotTechMap: Record<string, string[]> = {
+      frontend: ['React / Next.js', 'Tailwind CSS', 'TypeScript', 'Redux Toolkit', 'Vite / ESBuild'],
+      backend: ['Go (Golang)', 'NestJS / Express', 'PostgreSQL', 'Docker / K8s', 'Redis / gRPC'],
+      fullstack: ['Next.js App Router', 'TypeScript', 'PostgreSQL', 'Prisma ORM', 'AWS deployment'],
+      mobile: ['Flutter / Dart', 'React Native', 'Kotlin / Swift', 'Firebase Auth', 'GraphQL APIs'],
+      devops: ['Kubernetes', 'Terraform', 'CI/CD Pipelines', 'AWS / GCP Engine', 'Docker'],
+      qa: ['Selenium WebDriver', 'Playwright', 'Jest / Cypress', 'Postman / Newman', 'JIRA'],
+      product: ['Agile Roadmap Mgt', 'Figma Wireframing', 'Product Analytics', 'KPI Tracking', 'Asana'],
+      design: ['Figma Mastery', 'Design Systems', 'Micro-Interactions', 'User Testing', 'Adobe CC'],
+      other: ['Python / Fast API', 'Java / Spring Boot', 'PHP / Laravel', 'SQL / MySQL', 'GitHub actions']
+    };
+
     if (avgVal === 0) {
       return {
-        stats,
-        curvePoints: []
+        ...stats,
+        curveData: [],
+        p10: 0,
+        p50: 0,
+        p90: 0,
+        p99: 0,
+        hotTechs: hotTechMap[distSelectedRole] || ['Git / GitHub', 'REST APIs', 'SQL Database']
       };
     }
     
@@ -608,19 +631,6 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
     const p50 = mean;
     const p90 = Math.round(mean + 1.28 * stdDev);
     const p99 = Math.round(mean + 2.33 * stdDev);
-    
-    // Tech-stack recommendation mappings
-    const hotTechMap: Record<string, string[]> = {
-      frontend: ['React / Next.js', 'Tailwind CSS', 'TypeScript', 'Redux Toolkit', 'Vite / ESBuild'],
-      backend: ['Go (Golang)', 'NestJS / Express', 'PostgreSQL', 'Docker / K8s', 'Redis / gRPC'],
-      fullstack: ['Next.js App Router', 'TypeScript', 'PostgreSQL', 'Prisma ORM', 'AWS deployment'],
-      mobile: ['Flutter / Dart', 'React Native', 'Kotlin / Swift', 'Firebase Auth', 'GraphQL APIs'],
-      devops: ['Kubernetes', 'Terraform', 'CI/CD Pipelines', 'AWS / GCP Engine', 'Docker'],
-      qa: ['Selenium WebDriver', 'Playwright', 'Jest / Cypress', 'Postman / Newman', 'JIRA'],
-      product: ['Agile Roadmap Mgt', 'Figma Wireframing', 'Product Analytics', 'KPI Tracking', 'Asana'],
-      design: ['Figma Mastery', 'Design Systems', 'Micro-Interactions', 'User Testing', 'Adobe CC'],
-      other: ['Python / Fast API', 'Java / Spring Boot', 'PHP / Laravel', 'SQL / MySQL', 'GitHub actions']
-    };
 
     return {
       ...stats,
@@ -934,6 +944,48 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
         {showMap && (
           <div>
             <CompanyMap companies={companies} jobs={filteredJobs} hideHeaderTitle={true} />
+          </div>
+        )}
+      </div>
+
+      {/* Collapsible Salary Analytics Section */}
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm" id="collapsible-salary-analytics">
+        <button
+          onClick={() => setIsSalaryAnalyticsOpen(!isSalaryAnalyticsOpen)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-4 bg-gradient-to-r from-emerald-50/60 via-white to-indigo-50/40 hover:bg-emerald-50/80 transition-colors cursor-pointer text-left"
+        >
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 flex items-center justify-center shrink-0">
+              <Banknote className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-bold text-gray-900">
+                  Salary Analytics &amp; Crowdsourced Reports
+                </h3>
+                <span className="text-[10px] font-mono font-bold bg-amber-500/10 text-amber-700 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  Experimental Telemetry
+                </span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Crowdsourced compensation reports (Betonkemon dataset), level estimators, and role wage distributions.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-xs font-semibold text-emerald-700 hidden sm:inline">
+              {isSalaryAnalyticsOpen ? 'Hide Section' : 'Expand Section'}
+            </span>
+            <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-600 shadow-2xs">
+              {isSalaryAnalyticsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </div>
+          </div>
+        </button>
+
+        {isSalaryAnalyticsOpen && (
+          <div className="p-4 sm:p-6 bg-gray-50/50 border-t border-gray-200/80 space-y-6 animate-in fade-in duration-200">
+            <SalaryAnalytics companies={companies} jobs={jobs} />
           </div>
         )}
       </div>
@@ -2437,25 +2489,25 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg space-y-1">
                     <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">10th Percentile (Junior)</span>
-                    <div className="text-xs font-bold text-gray-800 font-mono">{selectedDistRoleStats.p10.toLocaleString()} BDT</div>
+                    <div className="text-xs font-bold text-gray-800 font-mono">{(selectedDistRoleStats?.p10 ?? 0).toLocaleString()} BDT</div>
                     <p className="text-[9px] text-gray-500 leading-tight">Starting baseline standard for entry hires.</p>
                   </div>
 
                   <div className="bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg space-y-1">
                     <span className="text-[9px] font-bold text-indigo-600 uppercase tracking-wider">50th Percentile (Median)</span>
-                    <div className="text-xs font-bold text-indigo-300 font-mono">{selectedDistRoleStats.p50.toLocaleString()} BDT</div>
+                    <div className="text-xs font-bold text-indigo-300 font-mono">{(selectedDistRoleStats?.p50 ?? 0).toLocaleString()} BDT</div>
                     <p className="text-[9px] text-gray-500 leading-tight">Average rate for stable mid-level engineers.</p>
                   </div>
 
                   <div className="bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg space-y-1">
                     <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider">90th Percentile (Senior)</span>
-                    <div className="text-xs font-bold text-purple-300 font-mono">{selectedDistRoleStats.p90.toLocaleString()} BDT</div>
+                    <div className="text-xs font-bold text-purple-300 font-mono">{(selectedDistRoleStats?.p90 ?? 0).toLocaleString()} BDT</div>
                     <p className="text-[9px] text-gray-500 leading-tight">Upper standard standard for senior architects.</p>
                   </div>
 
                   <div className="bg-gray-50 border border-gray-200/60 p-2.5 rounded-lg space-y-1">
                     <span className="text-[9px] font-bold text-pink-400 uppercase tracking-wider">99th Percentile (Elite Top 1%)</span>
-                    <div className="text-xs font-bold text-pink-300 font-mono">{selectedDistRoleStats.p99.toLocaleString()} BDT</div>
+                    <div className="text-xs font-bold text-pink-300 font-mono">{(selectedDistRoleStats?.p99 ?? 0).toLocaleString()} BDT</div>
                     <p className="text-[9px] text-gray-500 leading-tight">Elite global partners &amp; remote contractors.</p>
                   </div>
                 </div>
@@ -2468,10 +2520,10 @@ export default function AnalyticsDashboard({ companies, jobs }: AnalyticsDashboa
                   Recommended High-Income Stack
                 </h4>
                 <p className="text-[10px] text-gray-500 leading-relaxed">
-                  These programming languages, libraries, and protocols are highly correlated with top-percentile wage brackets in Bangladesh tech clusters for <strong>{selectedDistRoleStats.name}</strong> positions.
+                  These programming languages, libraries, and protocols are highly correlated with top-percentile wage brackets in Bangladesh tech clusters for <strong>{selectedDistRoleStats?.name || 'Selected Role'}</strong> positions.
                 </p>
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {selectedDistRoleStats.hotTechs.map((tech, idx) => (
+                  {(selectedDistRoleStats?.hotTechs || []).map((tech, idx) => (
                     <span 
                       key={`${tech}-${idx}`} 
                       className="bg-amber-500/5 border border-amber-500/20 text-amber-600 text-[10px] px-2.5 py-1 rounded font-medium shadow-xs"

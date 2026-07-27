@@ -4,8 +4,9 @@
  */
 import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
-import { Download, Filter, FileJson, FileSpreadsheet, Layers, Building, X, BarChart3 } from 'lucide-react';
+import { Download, Filter, FileJson, FileSpreadsheet, Layers, Building, X, BarChart3, Mail } from 'lucide-react';
 import { Company, Job } from '../types';
+import { EmailDigestSection } from './EmailDigestSection';
 
 interface ExportSectionProps {
   companies: Company[];
@@ -389,6 +390,11 @@ export default function ExportSection({ companies, jobs }: ExportSectionProps) {
                </div>
            </div>
         </div>
+      </div>
+
+      {/* Automated Email Digest & Cron Scheduler Section */}
+      <div className="pt-4">
+        <EmailDigestSection jobs={jobs} />
       </div>
     </div>
   );

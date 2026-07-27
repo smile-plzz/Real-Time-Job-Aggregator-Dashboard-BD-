@@ -14,7 +14,6 @@ import JobsFeed from './components/JobsFeed';
 import JobDetailModal from './components/JobDetailModal';
 // No manual listing imports needed
 import AnalyticsDashboard from './components/AnalyticsDashboard';
-import { SalaryAnalytics } from './components/SalaryAnalytics';
 import MarketPulse from './components/MarketPulse';
 import CrawlerDocs from './components/CrawlerDocs';
 import ExportSection from './components/ExportSection';
@@ -32,7 +31,7 @@ export default function App() {
   });
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [activeTab, setActiveTab] = useState<'jobs' | 'directory' | 'analytics' | 'salaries' | 'pulse' | 'docs' | 'export'>('jobs');
+  const [activeTab, setActiveTab] = useState<'jobs' | 'directory' | 'analytics' | 'pulse' | 'docs' | 'export'>('jobs');
   
   // Loading & Global States
   const [loading, setLoading] = useState(true);
@@ -316,20 +315,6 @@ export default function App() {
             Market Analytics
           </button>
           <button
-            onClick={() => setActiveTab('salaries')}
-            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === 'salaries'
-                ? 'border-emerald-600 text-emerald-700 font-bold bg-emerald-500/10 rounded-t-lg'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
-            }`}
-          >
-            <Banknote className={`w-4 h-4 ${activeTab === 'salaries' ? 'text-emerald-600' : 'text-gray-500'}`} />
-            <span>Salary Analytics</span>
-            <span className="bg-emerald-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full font-mono uppercase">
-              Betonkemon
-            </span>
-          </button>
-          <button
             onClick={() => setActiveTab('pulse')}
             className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
               activeTab === 'pulse'
@@ -436,23 +421,6 @@ export default function App() {
                   id="analytics-tab-content"
                 >
                   <AnalyticsDashboard 
-                    companies={companies} 
-                    jobs={jobs} 
-                  />
-                </motion.div>
-              )}
-
-              {activeTab === 'salaries' && (
-                <motion.div
-                  key="salaries-tab"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="w-full"
-                  id="salaries-tab-content"
-                >
-                  <SalaryAnalytics 
                     companies={companies} 
                     jobs={jobs} 
                   />

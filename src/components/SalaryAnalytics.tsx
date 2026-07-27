@@ -34,6 +34,54 @@ export const SalaryAnalytics: React.FC<SalaryAnalyticsProps> = ({ companies, job
   const [estWorkMode, setEstWorkMode] = useState<string>('Hybrid');
   const [estTech, setEstTech] = useState<string>('React');
 
+  const [submitModalOpen, setSubmitModalOpen] = useState<boolean>(false);
+  const [subForm, setSubForm] = useState({
+    company: '',
+    role: '',
+    category: 'fullstack',
+    level: 'Mid-Level',
+    expYears: 3,
+    monthlySalaryBDT: 100000,
+    techStack: 'React, Node.js',
+    workType: 'Hybrid'
+  });
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const handleSalarySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!subForm.company || !subForm.role || !subForm.monthlySalaryBDT) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/betonkemon-salaries/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...subForm,
+          techStack: subForm.techStack.split(',').map(s => s.trim()).filter(Boolean)
+        })
+      });
+      const data = await res.json();
+      if (data && data.cache) {
+        setBetonkemonData(data.cache);
+        setSubmitModalOpen(false);
+        setSubForm({
+          company: '',
+          role: '',
+          category: 'fullstack',
+          level: 'Mid-Level',
+          expYears: 3,
+          monthlySalaryBDT: 100000,
+          techStack: 'React, Node.js',
+          workType: 'Hybrid'
+        });
+      }
+    } catch (err) {
+      console.error('Failed to submit salary report:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const fetchBetonkemonData = async () => {
     try {
       setLoading(true);
@@ -255,6 +303,14 @@ export const SalaryAnalytics: React.FC<SalaryAnalyticsProps> = ({ companies, job
             >
               <Zap className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               <span>{isRefreshing ? 'Re-crawling betonkemon.com/en/roles...' : 'Scrape Live betonkemon.com Data'}</span>
+            </button>
+
+            <button
+              onClick={() => setSubmitModalOpen(true)}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+            >
+              <Banknote className="w-4 h-4" />
+              <span>Submit Salary Report</span>
             </button>
 
             <button
@@ -805,6 +861,157 @@ export const SalaryAnalytics: React.FC<SalaryAnalyticsProps> = ({ companies, job
           </div>
         </div>
       </div>
+
+      {/* Submit Salary Report Modal */}
+      {submitModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 max-w-lg w-full p-6 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <h3 className="text-lg font-extrabold text-gray-900 flex items-center gap-2">
+                  <Banknote className="w-5 h-5 text-emerald-600" />
+                  Submit Salary Report to Betonkemon
+                </h3>
+                <p className="text-xs text-gray-500">Anonymous & transparent crowdsourced report for Bangladeshi tech developers.</p>
+              </div>
+              <button 
+                onClick={() => setSubmitModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 text-lg font-bold px-2 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSalarySubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Company Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Brain Station 23 PLC"
+                    value={subForm.company}
+                    onChange={e => setSubForm({ ...subForm, company: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Role Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Senior Backend Engineer"
+                    value={subForm.role}
+                    onChange={e => setSubForm({ ...subForm, role: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Category</label>
+                  <select
+                    value={subForm.category}
+                    onChange={e => setSubForm({ ...subForm, category: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="backend">Backend</option>
+                    <option value="frontend">Frontend</option>
+                    <option value="fullstack">Fullstack</option>
+                    <option value="mobile">Mobile</option>
+                    <option value="devops">DevOps / SRE</option>
+                    <option value="sqa">SQA / Testing</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Seniority Level</label>
+                  <select
+                    value={subForm.level}
+                    onChange={e => setSubForm({ ...subForm, level: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="Junior (0-2 Yrs)">Junior (0-2 Yrs)</option>
+                    <option value="Mid-Level">Mid-Level</option>
+                    <option value="Senior (5+ Yrs)">Senior (5+ Yrs)</option>
+                    <option value="Lead / Architect">Lead / Architect</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Work Mode</label>
+                  <select
+                    value={subForm.workType}
+                    onChange={e => setSubForm({ ...subForm, workType: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-2.5 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="Hybrid">Hybrid</option>
+                    <option value="On-site">On-site</option>
+                    <option value="Remote">Remote</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Experience (Years)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={30}
+                    step={0.5}
+                    value={subForm.expYears}
+                    onChange={e => setSubForm({ ...subForm, expYears: Number(e.target.value) })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Monthly Salary (BDT) *</label>
+                  <input
+                    type="number"
+                    required
+                    min={10000}
+                    max={2000000}
+                    step={5000}
+                    value={subForm.monthlySalaryBDT}
+                    onChange={e => setSubForm({ ...subForm, monthlySalaryBDT: Number(e.target.value) })}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-900 font-mono font-bold text-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Tech Stack (Comma Separated)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Node.js, PostgreSQL, Docker, AWS"
+                  value={subForm.techStack}
+                  onChange={e => setSubForm({ ...subForm, techStack: e.target.value })}
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setSubmitModalOpen(false)}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-xl transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Add Salary Report'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
