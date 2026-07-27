@@ -532,7 +532,7 @@ export default function MarketPulse({ jobs, companies }: MarketPulseProps) {
                       <div className="space-y-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-2xl bg-indigo-600 group-hover:bg-indigo-700 text-white font-black flex items-center justify-center text-base shadow-sm group-hover:scale-105 transition-all">
+                            <div className="w-11 h-11 rounded-full bg-indigo-600 group-hover:bg-indigo-700 text-white font-black flex items-center justify-center text-sm shadow-xs group-hover:scale-105 transition-all ring-2 ring-indigo-100 shrink-0">
                               {item.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -546,9 +546,10 @@ export default function MarketPulse({ jobs, companies }: MarketPulseProps) {
                             </div>
                           </div>
 
-                          <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200/80 shrink-0">
-                            {item.jobs.length} Open Role{item.jobs.length === 1 ? '' : 's'}
-                          </span>
+                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200/80 text-[11px] font-extrabold shrink-0 shadow-2xs">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span>{item.jobs.length} {item.jobs.length === 1 ? 'Role' : 'Roles'}</span>
+                          </div>
                         </div>
 
                         {/* Required Stack Preview */}
