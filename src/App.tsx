@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Activity, Sparkles, RefreshCw, Layers, Cpu, AlertCircle, Trash2, Building, AlertTriangle, BarChart3, BookOpen, Download, Banknote } from 'lucide-react';
 
 import { Company, Job, ScrapeStats } from './types';
+import Tooltip from './components/Tooltip';
 import StatsSection from './components/StatsSection';
 import CompanyList from './components/CompanyList';
 import JobsFeed from './components/JobsFeed';
@@ -254,24 +255,26 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => fetchAllData()}
-              className="px-3.5 py-2.5 bg-white hover:bg-gray-100 text-gray-800 hover:text-gray-900 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-gray-200 hover:border-gray-300 shadow-sm"
-              title="Refresh dashboard"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              Sync Data
-            </button>
+            <Tooltip content="Fetch live company records & jobs from database cache" position="bottom">
+              <button
+                onClick={() => fetchAllData()}
+                className="px-3.5 py-2.5 bg-white hover:bg-gray-100 text-gray-800 hover:text-gray-900 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-gray-200 hover:border-gray-300 shadow-sm"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                Sync Data
+              </button>
+            </Tooltip>
             
-            <button
-              onClick={handleResetCache}
-              disabled={resetting}
-              className="px-3.5 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-              title="Wipe scraped jobs and reset to seed listings"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              {resetting ? 'Resetting...' : 'Reset System'}
-            </button>
+            <Tooltip content="Restore default seed job listings and clear scraped cache" position="bottom">
+              <button
+                onClick={handleResetCache}
+                disabled={resetting}
+                className="px-3.5 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {resetting ? 'Resetting...' : 'Reset System'}
+              </button>
+            </Tooltip>
           </div>
         </div>
       </header>
@@ -280,72 +283,89 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full" id="main-content">
         {/* Tab Selection Switcher */}
         <div className="flex border-b border-gray-200 mb-8 overflow-x-auto whitespace-nowrap scrollbar-none gap-2" id="dashboard-tab-navigation">
-          <button
-            onClick={() => setActiveTab('jobs')}
-            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === 'jobs'
-                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
-            }`}
-          >
-            <Layers className={`w-4 h-4 ${activeTab === 'jobs' ? 'text-indigo-600' : 'text-gray-500'}`} />
-            Active Jobs
-          </button>
-          <button
-            onClick={() => setActiveTab('directory')}
-            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === 'directory'
-                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
-            }`}
-          >
-            <Building className={`w-4 h-4 ${activeTab === 'directory' ? 'text-indigo-600' : 'text-gray-500'}`} />
-            Tech Directory
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === 'analytics'
-                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
-            }`}
-          >
-            <BarChart3 className={`w-4 h-4 ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-gray-500'}`} />
-            Market Analytics
-          </button>
-          <button
-            onClick={() => setActiveTab('pulse')}
-            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === 'pulse'
-                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
-            }`}
-          >
-            <Activity className={`w-4 h-4 ${activeTab === 'pulse' ? 'text-indigo-600' : 'text-gray-500'}`} />
-            Market Pulse
-          </button>
-          <button
-            onClick={() => setActiveTab('docs')}
-            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === 'docs'
-                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
-            }`}
-          >
-            <BookOpen className={`w-4 h-4 ${activeTab === 'docs' ? 'text-indigo-600' : 'text-gray-500'}`} />
-            System Architecture
-          </button>
-          <button
-            onClick={() => setActiveTab('export')}
-            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === 'export'
-                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
-            }`}
-          >
-            <Download className={`w-4 h-4 ${activeTab === 'export' ? 'text-indigo-600' : 'text-gray-500'}`} />
-            Export Data
-          </button>
+          <Tooltip content="Explore all aggregated job postings with real-time filtering" position="top">
+            <button
+              onClick={() => setActiveTab('jobs')}
+              className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+                activeTab === 'jobs'
+                  ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
+              }`}
+            >
+              <Layers className={`w-4 h-4 ${activeTab === 'jobs' ? 'text-indigo-600' : 'text-gray-500'}`} />
+              Active Jobs
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Browse 60+ verified tech companies & trigger live crawlers" position="top">
+            <button
+              onClick={() => setActiveTab('directory')}
+              className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+                activeTab === 'directory'
+                  ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
+              }`}
+            >
+              <Building className={`w-4 h-4 ${activeTab === 'directory' ? 'text-indigo-600' : 'text-gray-500'}`} />
+              Tech Directory
+            </button>
+          </Tooltip>
+
+          <Tooltip content="View sector distributions, hiring trends & interactive company map" position="top">
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+                activeTab === 'analytics'
+                  ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
+              }`}
+            >
+              <BarChart3 className={`w-4 h-4 ${activeTab === 'analytics' ? 'text-indigo-600' : 'text-gray-500'}`} />
+              Market Analytics
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Live market pulse, seniority breakdown & instant drilldown modals" position="top">
+            <button
+              onClick={() => setActiveTab('pulse')}
+              className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+                activeTab === 'pulse'
+                  ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
+              }`}
+            >
+              <Activity className={`w-4 h-4 ${activeTab === 'pulse' ? 'text-indigo-600' : 'text-gray-500'}`} />
+              Market Pulse
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Technical architecture, scraper pipeline & endpoint documentation" position="top">
+            <button
+              onClick={() => setActiveTab('docs')}
+              className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+                activeTab === 'docs'
+                  ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
+              }`}
+            >
+              <BookOpen className={`w-4 h-4 ${activeTab === 'docs' ? 'text-indigo-600' : 'text-gray-500'}`} />
+              System Architecture
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Export job listings & telemetry as CSV or JSON format" position="top">
+            <button
+              onClick={() => setActiveTab('export')}
+              className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
+                activeTab === 'export'
+                  ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
+              }`}
+            >
+              <Download className={`w-4 h-4 ${activeTab === 'export' ? 'text-indigo-600' : 'text-gray-500'}`} />
+              Export Data
+            </button>
+          </Tooltip>
         </div>
 
         {/* Global Loading state overlay */}

@@ -12,6 +12,7 @@ import {
   ExternalLink, ChevronRight, Filter
 } from 'lucide-react';
 import { DetailModal, DetailModalProps } from './DetailModal';
+import AppTooltip from './Tooltip';
 
 interface MarketPulseProps {
   jobs: Job[];
@@ -484,82 +485,93 @@ export default function MarketPulse({ jobs, companies }: MarketPulseProps) {
           </div>
         </div>
 
-        {/* --- ACTIVELY RECRUITING COMPANIES SECTION --- */}
-        <div className="bg-slate-900 rounded-3xl p-6 sm:p-8 text-white space-y-6 mb-8 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+        {/* --- ACTIVELY RECRUITING COMPANIES SECTION (Minimalist White Modern Design) --- */}
+        <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6 mb-8 shadow-sm">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-100">
             <div>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-mono font-bold mb-2 border border-emerald-400/30">
-                <Building2 className="w-3.5 h-3.5" />
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-mono font-bold mb-2 border border-emerald-200/80">
+                <Building2 className="w-3.5 h-3.5 text-emerald-600" />
                 {activelyRecruitingCompanies.length} Companies Hiring Now
               </div>
-              <h3 className="text-xl font-extrabold text-white tracking-tight">Actively Recruiting Tech Companies</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Actively Recruiting Tech Companies</h3>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 font-medium">
                 Top software &amp; IT companies with active open positions. Click any company card to reveal its open vacancies.
               </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">Interactive Drilldown</span>
+              <span className="px-3 py-1 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded-full text-xs font-bold">
+                Live Data Feed
+              </span>
             </div>
           </div>
 
           {activelyRecruitingCompanies.length === 0 ? (
-            <div className="text-center py-8 text-slate-400 text-xs">
-              No active companies loaded yet. Run a global scan to scrape live listings!
+            <div className="text-center py-12 bg-slate-50/60 rounded-2xl border border-slate-200/70 p-6 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-100">
+                <Building2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-base font-extrabold text-slate-800">No active companies loaded yet</h4>
+                <p className="text-xs text-slate-500 mt-1">Run a global scan or sync data to refresh company postings!</p>
+              </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4.5">
               {activelyRecruitingCompanies.map((item, idx) => {
                 const compProfile = item.companyProfile;
-                const compSkills = Array.from(new Set(item.jobs.flatMap(j => j.skills || []))).slice(0, 3);
+                const compSkills = Array.from(new Set(item.jobs.flatMap(j => j.skills || []))).slice(0, 4);
                 
                 return (
-                  <div
-                    key={idx}
-                    onClick={() => openCompanyModal(item.name)}
-                    className="bg-slate-950/80 hover:bg-slate-800/90 border border-slate-800 hover:border-indigo-500/50 p-5 rounded-2xl transition-all cursor-pointer group flex flex-col justify-between space-y-4 shadow-sm relative overflow-hidden"
-                  >
-                    <div>
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white font-extrabold flex items-center justify-center text-sm shadow-md group-hover:scale-105 transition-transform">
-                            {item.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <h4 className="font-extrabold text-white text-sm group-hover:text-indigo-300 transition-colors line-clamp-1">
-                              {item.name}
-                            </h4>
-                            <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                              {compProfile?.location ? (
-                                <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-indigo-400" /> {compProfile.location}</span>
-                              ) : (
-                                <span>Dhaka, Bangladesh</span>
-                              )}
+                  <AppTooltip key={idx} content={`Click to open full profile & ${item.jobs.length} active vacancies for ${item.name}`} position="top" className="w-full">
+                    <div
+                      onClick={() => openCompanyModal(item.name)}
+                      className="w-full bg-white hover:bg-slate-50/80 border border-slate-200/90 hover:border-indigo-400/80 p-5 rounded-2xl transition-all duration-200 cursor-pointer group flex flex-col justify-between space-y-4 shadow-2xs hover:shadow-md relative overflow-hidden text-left"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-2xl bg-indigo-600 group-hover:bg-indigo-700 text-white font-black flex items-center justify-center text-base shadow-sm group-hover:scale-105 transition-all">
+                              {item.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="font-black text-slate-900 text-sm group-hover:text-indigo-600 transition-colors line-clamp-1">
+                                {item.name}
+                              </h4>
+                              <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-0.5">
+                                <MapPin className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                <span className="line-clamp-1">{compProfile?.location || 'Dhaka, Bangladesh'}</span>
+                              </div>
                             </div>
                           </div>
+
+                          <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200/80 shrink-0">
+                            {item.jobs.length} Open Role{item.jobs.length === 1 ? '' : 's'}
+                          </span>
                         </div>
 
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
-                          {item.jobs.length} Open Role{item.jobs.length === 1 ? '' : 's'}
-                        </span>
+                        {/* Required Stack Preview */}
+                        {compSkills.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {compSkills.map((sk, sIdx) => (
+                              <span 
+                                key={sIdx}
+                                className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200/60"
+                              >
+                                {sk}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Required Stack Preview */}
-                      {compSkills.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {compSkills.map((sk, sIdx) => (
-                            <span 
-                              key={sIdx}
-                              className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 text-[10px] font-mono border border-slate-700"
-                            >
-                              {sk}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                      <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-extrabold group-hover:text-indigo-700">
+                        <span>Reveal Job Openings</span>
+                        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
-
-                    <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-indigo-400 font-bold group-hover:text-indigo-300">
-                      <span>Reveal Job Openings</span>
-                      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
+                  </AppTooltip>
                 );
               })}
             </div>
@@ -678,14 +690,15 @@ export default function MarketPulse({ jobs, companies }: MarketPulseProps) {
 
             <div className="grid grid-cols-3 gap-2 mb-4">
               {experienceData.map((exp, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => openExperienceModal(exp.key)}
-                  className="p-2.5 rounded-xl bg-violet-50/60 hover:bg-violet-100/80 border border-violet-100 text-left transition-all cursor-pointer group"
-                >
-                  <div className="text-[10px] font-bold text-violet-600 uppercase">{exp.subject}</div>
-                  <div className="text-base font-extrabold text-gray-900 mt-0.5">{exp.count} jobs</div>
-                </button>
+                <AppTooltip key={idx} content={`Click to inspect all ${exp.subject} roles in detailed modal`} position="top">
+                  <button
+                    onClick={() => openExperienceModal(exp.key)}
+                    className="w-full p-2.5 rounded-xl bg-violet-50/60 hover:bg-violet-100/80 border border-violet-100 text-left transition-all cursor-pointer group"
+                  >
+                    <div className="text-[10px] font-bold text-violet-600 uppercase">{exp.subject}</div>
+                    <div className="text-base font-extrabold text-gray-900 mt-0.5">{exp.count} jobs</div>
+                  </button>
+                </AppTooltip>
               ))}
             </div>
 

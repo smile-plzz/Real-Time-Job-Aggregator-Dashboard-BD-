@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Job, Company } from '../types';
+import Tooltip from './Tooltip';
 import { 
   X, Briefcase, MapPin, Building2, ExternalLink, Search, 
   Banknote, Award, Sparkles, Filter, ChevronRight, Laptop, CheckCircle2,
@@ -186,16 +187,18 @@ export function DetailModal({
 
             <div className="flex items-center gap-2 shrink-0">
               {companyProfile.website && (
-                <a
-                  href={companyProfile.website.startsWith('http') ? companyProfile.website : `https://${companyProfile.website}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <Globe className="w-3.5 h-3.5" />
-                  <span>Company Website</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+                <Tooltip content="Open company official portal in a new tab" position="left">
+                  <a
+                    href={companyProfile.website.startsWith('http') ? companyProfile.website : `https://${companyProfile.website}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Company Website</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </Tooltip>
               )}
             </div>
           </div>

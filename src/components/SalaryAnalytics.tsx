@@ -6,6 +6,7 @@ import {
   Banknote, Zap, Search, Filter, Terminal, Calculator, TrendingUp, Award, Building, Sparkles, RefreshCw, CheckCircle2, ArrowUpRight, ShieldCheck, Briefcase, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download, Layers, Sparkle, ArrowUpDown
 } from 'lucide-react';
 import { Company, Job } from '../types';
+import AppTooltip from './Tooltip';
 
 interface SalaryAnalyticsProps {
   companies: Company[];
@@ -296,40 +297,48 @@ export const SalaryAnalytics: React.FC<SalaryAnalyticsProps> = ({ companies, job
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button
-              onClick={handleReCrawl}
-              disabled={isRefreshing}
-              className="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 cursor-pointer"
-            >
-              <Zap className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>{isRefreshing ? 'Re-crawling betonkemon.com/en/roles...' : 'Scrape Live betonkemon.com Data'}</span>
-            </button>
+            <AppTooltip content="Re-crawl live salary records from betonkemon.com/en/roles endpoint" position="top">
+              <button
+                onClick={handleReCrawl}
+                disabled={isRefreshing}
+                className="px-4 py-2.5 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                <Zap className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>{isRefreshing ? 'Re-crawling betonkemon.com/en/roles...' : 'Scrape Live betonkemon.com Data'}</span>
+              </button>
+            </AppTooltip>
 
-            <button
-              onClick={() => setSubmitModalOpen(true)}
-              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
-            >
-              <Banknote className="w-4 h-4" />
-              <span>Submit Salary Report</span>
-            </button>
+            <AppTooltip content="Contribute an anonymous developer salary report" position="top">
+              <button
+                onClick={() => setSubmitModalOpen(true)}
+                className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+              >
+                <Banknote className="w-4 h-4" />
+                <span>Submit Salary Report</span>
+              </button>
+            </AppTooltip>
 
-            <button
-              onClick={exportToCSV}
-              className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <Download className="w-4 h-4 text-emerald-300" />
-              <span>Export CSV Benchmark</span>
-            </button>
+            <AppTooltip content="Download processed salary telemetry dataset in CSV format" position="top">
+              <button
+                onClick={exportToCSV}
+                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs rounded-xl border border-white/20 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-emerald-300" />
+                <span>Export CSV Benchmark</span>
+              </button>
+            </AppTooltip>
 
-            <a
-              href="https://www.betonkemon.com/en/roles"
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2.5 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-200 font-semibold text-xs rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1.5"
-            >
-              <span>Visit Betonkemon Roles</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </a>
+            <AppTooltip content="Visit official Betonkemon portal in new tab" position="top">
+              <a
+                href="https://www.betonkemon.com/en/roles"
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-2.5 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-200 font-semibold text-xs rounded-xl border border-emerald-500/30 transition-all flex items-center gap-1.5"
+              >
+                <span>Visit Betonkemon Roles</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </a>
+            </AppTooltip>
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, Building2, ExternalLink, Globe, Linkedin, Mail, Play, AlertCircle, CheckCircle2, RefreshCw, Cpu, SlidersHorizontal, ArrowUpDown, MapPin, Sparkles, Layers, Users, StopCircle } from 'lucide-react';
 import { Company } from '../types';
+import Tooltip from './Tooltip';
 
 interface CompanyListProps {
   companies: Company[];
@@ -197,23 +198,27 @@ export default function CompanyList({ companies, onScrape, bulkScraping, onBulkS
             Bulk Scan Top 5 Portals
           </button>
 
-          <button
-            onClick={triggerBulkScrapeAll}
-            disabled={bulkScraping}
-            className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hidden transition-all cursor-pointer"
-          >
-            <Play className="w-4 h-4 text-white fill-current animate-pulse" />
-            Scan All {companies.length} Sites
-          </button>
+          <Tooltip content="Sequentially crawl all registered company career portals" position="bottom">
+            <button
+              onClick={triggerBulkScrapeAll}
+              disabled={bulkScraping}
+              className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:hidden transition-all cursor-pointer"
+            >
+              <Play className="w-4 h-4 text-white fill-current animate-pulse" />
+              Scan All {companies.length} Sites
+            </button>
+          </Tooltip>
 
           {bulkScraping && (
-            <button
-              onClick={onStopBulkScrape}
-              className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/20 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
-            >
-              <StopCircle className="w-4 h-4 text-rose-600" />
-              Stop Scanning
-            </button>
+            <Tooltip content="Halt active background crawler worker" position="bottom">
+              <button
+                onClick={onStopBulkScrape}
+                className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/20 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+              >
+                <StopCircle className="w-4 h-4 text-rose-600" />
+                Stop Scanning
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>

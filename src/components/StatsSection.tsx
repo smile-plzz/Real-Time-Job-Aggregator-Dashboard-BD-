@@ -7,6 +7,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Building2, Briefcase, RefreshCw, BarChart2, CheckCircle2, TrendingUp } from 'lucide-react';
 import { ScrapeStats } from '../types';
+import Tooltip from './Tooltip';
 
 interface StatsSectionProps {
   stats: ScrapeStats;
@@ -82,93 +83,102 @@ export default function StatsSection({ stats, isResetting, onReset }: StatsSecti
       id="stats-dashboard"
     >
       {/* Metric Card 1: Total Companies */}
-      <motion.div 
-        variants={itemVariants}
-        className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
-        id="stat-card-companies"
-      >
-        <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Total Companies</span>
-          <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">{stats.totalCompanies}</h3>
-          <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
-            <Building2 className="w-3.5 h-3.5 text-indigo-600" />
-            From Merged Tech Directories
-          </p>
-        </div>
-        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 border border-indigo-500/10">
-          <Building2 className="w-6 h-6" />
-        </div>
-      </motion.div>
+      <Tooltip content="Verified Bangladesh tech companies registered in database" position="bottom" className="w-full">
+        <motion.div 
+          variants={itemVariants}
+          className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors w-full"
+          id="stat-card-companies"
+        >
+          <div>
+            <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Total Companies</span>
+            <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">{stats.totalCompanies}</h3>
+            <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+              <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+              From Merged Tech Directories
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 border border-indigo-500/10 shrink-0">
+            <Building2 className="w-6 h-6" />
+          </div>
+        </motion.div>
+      </Tooltip>
 
       {/* Metric Card 2: Total Active Jobs */}
-      <motion.div 
-        variants={itemVariants}
-        className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
-        id="stat-card-jobs"
-      >
-        <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Aggregated Jobs</span>
-          <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">{stats.totalJobs}</h3>
-          <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-            Scraped & Synced Live
-          </p>
-        </div>
-        <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 border border-emerald-500/10">
-          <Briefcase className="w-6 h-6" />
-        </div>
-      </motion.div>
+      <Tooltip content="Live software openings scraped directly from career sites" position="bottom" className="w-full">
+        <motion.div 
+          variants={itemVariants}
+          className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors w-full"
+          id="stat-card-jobs"
+        >
+          <div>
+            <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Aggregated Jobs</span>
+            <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">{stats.totalJobs}</h3>
+            <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+              Scraped & Synced Live
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-600 border border-emerald-500/10 shrink-0">
+            <Briefcase className="w-6 h-6" />
+          </div>
+        </motion.div>
+      </Tooltip>
 
       {/* Metric Card 3: Scraped Portals */}
-      <motion.div 
-        variants={itemVariants}
-        className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
-        id="stat-card-scanned"
-      >
-        <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Portals Scanned</span>
-          <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">
-            {stats.scrapedCompanies} <span className="text-lg text-gray-500 font-normal">/ {stats.totalCompanies}</span>
-          </h3>
-          <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-violet-400" />
-            Active Sources: {stats.activeCompaniesCount}
-          </p>
-        </div>
-        <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-400 border border-violet-500/10">
-          <RefreshCw className="w-6 h-6" />
-        </div>
-      </motion.div>
+      <Tooltip content="Ratio of scanned company career portals with active data" position="bottom" className="w-full">
+        <motion.div 
+          variants={itemVariants}
+          className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors w-full"
+          id="stat-card-scanned"
+        >
+          <div>
+            <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Portals Scanned</span>
+            <h3 className="text-3xl font-semibold tracking-tight text-gray-900 mt-1">
+              {stats.scrapedCompanies} <span className="text-lg text-gray-500 font-normal">/ {stats.totalCompanies}</span>
+            </h3>
+            <p className="text-xs text-gray-600 mt-2 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-violet-400" />
+              Active Sources: {stats.activeCompaniesCount}
+            </p>
+          </div>
+          <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-400 border border-violet-500/10 shrink-0">
+            <RefreshCw className="w-6 h-6" />
+          </div>
+        </motion.div>
+      </Tooltip>
 
       {/* Metric Card 4: Top Demand Category */}
-      <motion.div 
-        variants={itemVariants}
-        className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors"
-        id="stat-card-demand"
-      >
-        <div>
-          <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Highest Demand</span>
-          <h3 className="text-xl font-semibold tracking-tight text-gray-900 mt-2 truncate max-w-[170px]" title={topCategory}>
-            {topCategory}
-          </h3>
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-xs text-gray-600">
-              {maxCategoryCount > 0 ? `${maxCategoryCount} positions active` : 'No jobs loaded'}
-            </p>
-            <button 
-              onClick={onReset}
-              disabled={isResetting}
-              className="text-xs text-rose-600 hover:text-rose-300 hover:underline flex items-center gap-1 ml-2 font-medium"
-              title="Reset aggregated jobs to seed data"
-            >
-              Reset Cache
-            </button>
+      <Tooltip content="Engineering specialization with maximum open listings" position="bottom" className="w-full">
+        <motion.div 
+          variants={itemVariants}
+          className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs flex items-center justify-between hover:border-indigo-500/25 transition-colors w-full"
+          id="stat-card-demand"
+        >
+          <div>
+            <span className="text-xs font-mono uppercase tracking-wider text-gray-500">Highest Demand</span>
+            <h3 className="text-xl font-semibold tracking-tight text-gray-900 mt-2 truncate max-w-[170px]" title={topCategory}>
+              {topCategory}
+            </h3>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-xs text-gray-600">
+                {maxCategoryCount > 0 ? `${maxCategoryCount} positions active` : 'No jobs loaded'}
+              </p>
+              <Tooltip content="Wipe scraped listings & restore initial seed dataset" position="top">
+                <button 
+                  onClick={onReset}
+                  disabled={isResetting}
+                  className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-rose-600 transition-colors cursor-pointer border border-transparent hover:border-gray-200 ml-2 shrink-0"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin text-rose-500' : ''}`} />
+                </button>
+              </Tooltip>
+            </div>
           </div>
-        </div>
-        <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 border border-amber-500/10">
-          <BarChart2 className="w-6 h-6" />
-        </div>
-      </motion.div>
+          <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 border border-amber-500/10 shrink-0">
+            <BarChart2 className="w-6 h-6" />
+          </div>
+        </motion.div>
+      </Tooltip>
 
       {/* Custom Handcrafted Distribution Visualizers */}
       <motion.div 

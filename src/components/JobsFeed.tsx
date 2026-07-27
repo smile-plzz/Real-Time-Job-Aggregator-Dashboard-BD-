@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Search, MapPin, Briefcase, Calendar, ChevronRight, Sparkles, SlidersHorizontal, Filter, X, Cpu, Zap, RefreshCw, Flame, CheckCircle2, AlertTriangle, AlertCircle, XCircle, ShieldCheck, Check, HelpCircle, Building, ShieldAlert } from 'lucide-react';
 import { Job, Company, validateJob } from '../types';
+import Tooltip from './Tooltip';
 
 interface JobsFeedProps {
   jobs: Job[];
@@ -266,36 +267,42 @@ export default function JobsFeed({
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200 text-xs">
-            <button
-              onClick={() => setSortBy('newest')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                sortBy === 'newest'
-                  ? 'bg-white text-indigo-600 shadow-xs'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              ⚡ Recently Posted
-            </button>
-            <button
-              onClick={() => setSortBy('salary-desc')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                sortBy === 'salary-desc'
-                  ? 'bg-white text-indigo-600 shadow-xs'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              💰 High Salary
-            </button>
-            <button
-              onClick={() => setSortBy('experience-desc')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                sortBy === 'experience-desc'
-                  ? 'bg-white text-indigo-600 shadow-xs'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              👑 Senior Roles
-            </button>
+            <Tooltip content="Order jobs by date scraped or posted" position="bottom">
+              <button
+                onClick={() => setSortBy('newest')}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                  sortBy === 'newest'
+                    ? 'bg-white text-indigo-600 shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                ⚡ Recently Posted
+              </button>
+            </Tooltip>
+            <Tooltip content="Sort roles starting with highest listed BDT compensation" position="bottom">
+              <button
+                onClick={() => setSortBy('salary-desc')}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                  sortBy === 'salary-desc'
+                    ? 'bg-white text-indigo-600 shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                💰 High Salary
+              </button>
+            </Tooltip>
+            <Tooltip content="Prioritize Lead, Principal & Senior Engineer positions" position="bottom">
+              <button
+                onClick={() => setSortBy('experience-desc')}
+                className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                  sortBy === 'experience-desc'
+                    ? 'bg-white text-indigo-600 shadow-xs'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                👑 Senior Roles
+              </button>
+            </Tooltip>
           </div>
 
           <select
@@ -359,31 +366,35 @@ export default function JobsFeed({
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 z-10 shrink-0">
-          <button
-            onClick={() => onBulkScrape && onBulkScrape(companies, false)}
-            disabled={bulkScraping}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
-              bulkScraping 
-                ? 'bg-gray-100/50 border-gray-200 text-gray-500 cursor-not-allowed'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 shadow-sm hover:border-slate-500'
-            }`}
-          >
-            <Zap className={`w-3.5 h-3.5 text-amber-600 ${bulkScraping ? 'opacity-40' : 'animate-bounce'}`} />
-            Scan All (Fast)
-          </button>
+          <Tooltip content="Fast HTML parsing across all directory career pages" position="top">
+            <button
+              onClick={() => onBulkScrape && onBulkScrape(companies, false)}
+              disabled={bulkScraping}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                bulkScraping 
+                  ? 'bg-gray-100/50 border-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 shadow-sm hover:border-slate-500'
+              }`}
+            >
+              <Zap className={`w-3.5 h-3.5 text-amber-600 ${bulkScraping ? 'opacity-40' : 'animate-bounce'}`} />
+              Scan All (Fast)
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={() => onBulkScrape && onBulkScrape(companies, true)}
-            disabled={bulkScraping}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
-              bulkScraping 
-                ? 'bg-gray-100/50 border-gray-200 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white border-indigo-500/30 shadow-md shadow-indigo-900/20'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
-            Heuristic Scan All (Deep Crawl)
-          </button>
+          <Tooltip content="Deep DOM heuristic analysis for hidden career links & paginated jobs" position="top">
+            <button
+              onClick={() => onBulkScrape && onBulkScrape(companies, true)}
+              disabled={bulkScraping}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                bulkScraping 
+                  ? 'bg-gray-100/50 border-gray-200 text-gray-500 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white border-indigo-500/30 shadow-md shadow-indigo-900/20'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-indigo-200" />
+              Heuristic Scan All (Deep Crawl)
+            </button>
+          </Tooltip>
         </div>
       </div>
 
