@@ -591,6 +591,25 @@ export function EmailDigestSection({ jobs, initialCategory = 'all' }: EmailDiges
 
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => {
+                    const blob = new Blob([generatedEmailHtml], { type: 'text/html' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `bd-tech-job-digest-${templateTheme}.html`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                  }}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-xs font-bold text-indigo-700 transition-colors flex items-center gap-1 cursor-pointer"
+                  title="Download raw HTML email template"
+                >
+                  <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                  Download .html
+                </button>
+
+                <button
                   onClick={copyEmailHtml}
                   className="px-3 py-1.5 rounded-xl bg-white hover:bg-gray-50 border border-gray-300 text-xs font-bold text-gray-700 transition-colors flex items-center gap-1 cursor-pointer"
                 >
