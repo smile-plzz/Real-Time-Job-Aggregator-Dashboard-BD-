@@ -39,11 +39,6 @@ export function EmailDigestSection({ jobs, initialCategory = 'all' }: EmailDiges
   const [copiedHtml, setCopiedHtml] = useState(false);
   const [subSaved, setSubSaved] = useState(false);
   const [activeSubscribersCount, setActiveSubscribersCount] = useState<number>(0);
-  const [isTriggeringCron, setIsTriggeringCron] = useState(false);
-  const [cronResult, setCronResult] = useState<any>(null);
-
-  // Architecture Guide Tab
-  const [activeGuideTab, setActiveGuideTab] = useState<'gh-actions' | 'cron-job' | 'render-service'>('gh-actions');
 
   // Fetch active subscriber stats on mount
   useEffect(() => {
@@ -290,27 +285,6 @@ export function EmailDigestSection({ jobs, initialCategory = 'all' }: EmailDiges
     } catch (err) {
       setIsSendingTest(false);
       alert('Network error connecting to email API service.');
-    }
-  };
-
-  // Trigger Cron Endpoint Manually
-  const handleTriggerCronNow = async () => {
-    setIsTriggeringCron(true);
-    setCronResult(null);
-    try {
-      const resp = await fetch('/api/cron/daily-digest', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer default_secret_token'
-        }
-      });
-      const data = await resp.json();
-      setIsTriggeringCron(false);
-      setCronResult(data);
-    } catch (err) {
-      setIsTriggeringCron(false);
-      alert('Failed triggering cron endpoint.');
     }
   };
 
@@ -759,138 +733,6 @@ export function EmailDigestSection({ jobs, initialCategory = 'all' }: EmailDiges
           </div>
         )}
 
-      </div>
-
-      {/* Section 3: Render Free Tier & GitHub Actions Automated Cron Hub */}
-      <div className="bg-slate-900 rounded-2xl p-6 text-white space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-mono font-bold mb-2">
-              <Terminal className="w-3.5 h-3.5" />
-              Automated Daily Cron &amp; Scraper Dispatcher
-            </div>
-            <h3 className="text-lg font-bold text-white">Daily Morning Automation Hub</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Trigger scraper scans and newsletter dispatching automatically at 09:00 AM BST every day.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleTriggerCronNow}
-              disabled={isTriggeringCron}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer shadow-lg"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isTriggeringCron ? 'animate-spin' : ''}`} />
-              {isTriggeringCron ? 'Triggering Cron Scraper...' : 'Trigger Cron Worker Now'}
-            </button>
-          </div>
-        </div>
-
-        {/* Cron Execution Output Result Banner */}
-        {cronResult && (
-          <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs text-emerald-300 space-y-1 animate-in fade-in">
-            <div className="font-bold text-amber-400">⚡ Cron Execution Response:</div>
-            <div>Status: {cronResult.success ? 'SUCCESS' : 'FAILED'}</div>
-            <div>Active Jobs Scraped: {cronResult.activeJobsCount}</div>
-            <div>Total Subscribers Processed: {cronResult.totalSubscribers}</div>
-            <div>Emails Delivered: {cronResult.emailsSent}</div>
-            <div className="text-slate-400 text-[11px] pt-1">{cronResult.message}</div>
-          </div>
-        )}
-
-        {/* Guide Selector Tabs */}
-        <div className="space-y-4">
-          <div className="flex bg-slate-800/80 p-1 rounded-xl text-xs font-semibold shrink-0 max-w-md">
-            <button
-              onClick={() => setActiveGuideTab('gh-actions')}
-              className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeGuideTab === 'gh-actions' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              1. GitHub Actions Cron
-            </button>
-            <button
-              onClick={() => setActiveGuideTab('cron-job')}
-              className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeGuideTab === 'cron-job' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              2. Cron-Job.org
-            </button>
-            <button
-              onClick={() => setActiveGuideTab('render-service')}
-              className={`flex-1 py-1.5 rounded-lg transition-all cursor-pointer ${
-                activeGuideTab === 'render-service' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              3. Backend API Route
-            </button>
-          </div>
-
-          {/* Tab 1: GitHub Actions Cron */}
-          {activeGuideTab === 'gh-actions' && (
-            <div className="space-y-3 text-xs animate-in fade-in">
-              <p className="text-slate-300 leading-relaxed">
-                GitHub Actions automatically triggers at 9:00 AM BST (03:00 UTC) every day, pings your Render deployment endpoint, triggers the job scraper scan, and delivers filtered HTML digests to all subscribers.
-              </p>
-              
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 overflow-x-auto">
-                <span className="text-slate-500"># Workflow saved in .github/workflows/daily-scraper-newsletter.yml</span><br/>
-                <span className="text-purple-400">name</span>: <span className="text-emerald-300">Daily Scraper &amp; Email Newsletter Cron</span><br/><br/>
-                <span className="text-purple-400">on</span>:<br/>
-                &nbsp;&nbsp;<span className="text-purple-400">schedule</span>:<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;- <span className="text-purple-400">cron</span>: <span className="text-amber-300">'0 3 * * *'</span><br/>
-                &nbsp;&nbsp;<span className="text-purple-400">workflow_dispatch</span>:<br/><br/>
-                <span className="text-purple-400">jobs</span>:<br/>
-                &nbsp;&nbsp;<span className="text-purple-400">wake-scraper-and-send-email</span>:<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-purple-400">runs-on</span>: <span className="text-emerald-300">ubuntu-latest</span><br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-purple-400">steps</span>:<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span className="text-purple-400">name</span>: <span className="text-emerald-300">Ping Render / App Service Endpoint</span><br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span className="text-purple-400">run</span>: |<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;curl -X POST "https://real-time-job-aggregator-dashboard-bd.onrender.com/api/cron/daily-digest" \<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-H "Authorization: Bearer \${'{ secrets.CRON_SECRET }'}" \<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-H "Content-Type: application/json"
-              </div>
-            </div>
-          )}
-
-          {/* Tab 2: Cron-Job.org */}
-          {activeGuideTab === 'cron-job' && (
-            <div className="space-y-3 text-xs animate-in fade-in">
-              <p className="text-slate-300 leading-relaxed">
-                If using an external HTTP pinger like <strong>cron-job.org</strong> or <strong>Upstash QStash</strong>:
-              </p>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-slate-300 text-[11px]">
-                <div>• Target Endpoint URL: <code className="text-amber-300">https://real-time-job-aggregator-dashboard-bd.onrender.com/api/cron/daily-digest</code></div>
-                <div>• HTTP Method: <code className="text-indigo-400 font-bold">POST</code></div>
-                <div>• Header: <code className="text-emerald-300">Authorization: Bearer default_secret_token</code></div>
-                <div>• Schedule: Daily at 09:00 AM (Asia/Dhaka time)</div>
-              </div>
-            </div>
-          )}
-
-          {/* Tab 3: Server Endpoint */}
-          {activeGuideTab === 'render-service' && (
-            <div className="space-y-3 text-xs animate-in fade-in">
-              <p className="text-slate-300 leading-relaxed">
-                The backend endpoint <code className="text-indigo-300">/api/cron/daily-digest</code> performs smart filtering per subscriber and sends emails via Resend API:
-              </p>
-              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-[11px] text-slate-300 overflow-x-auto">
-                app.<span className="text-indigo-400">post</span>(<span className="text-emerald-300">'/api/cron/daily-digest'</span>, <span className="text-purple-400">async</span> (req, res) =&gt; &#123;<br/>
-                &nbsp;&nbsp;<span className="text-slate-500">// Scrapes fresh job listings across Bangladeshi tech portals</span><br/>
-                &nbsp;&nbsp;<span className="text-purple-400">const</span> freshJobs = <span className="text-purple-400">await</span> <span className="text-indigo-400">getJobs</span>();<br/>
-                &nbsp;&nbsp;<span className="text-purple-400">const</span> activeSubs = <span className="text-purple-400">await</span> <span className="text-indigo-400">getActiveSubscribers</span>();<br/><br/>
-                &nbsp;&nbsp;<span className="text-purple-400">for</span> (<span className="text-purple-400">const</span> sub <span className="text-purple-400">of</span> activeSubs) &#123;<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-purple-400">const</span> emailHtml = <span className="text-indigo-400">buildDigestHtmlForSubscriber</span>(sub, freshJobs);<br/>
-                &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-purple-400">await</span> <span className="text-indigo-400">sendViaResend</span>(sub.email, emailHtml);<br/>
-                &nbsp;&nbsp;&#125;<br/>
-                &nbsp;&nbsp;<span className="text-purple-400">return</span> res.<span className="text-indigo-400">json</span>(&#123; success: <span className="text-purple-400">true</span> &#125;);<br/>
-                &#125;);
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
     </div>
