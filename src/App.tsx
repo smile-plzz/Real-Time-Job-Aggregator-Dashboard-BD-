@@ -12,9 +12,6 @@ import StatsSection from './components/StatsSection';
 import CompanyList from './components/CompanyList';
 import JobsFeed from './components/JobsFeed';
 import JobDetailModal from './components/JobDetailModal';
-import { FirebaseAuthBar } from './components/FirebaseAuthBar';
-import { subscribeToSavedJobs } from './lib/savedJobsService';
-import { Bookmark } from 'lucide-react';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import MarketPulse from './components/MarketPulse';
 import CrawlerDocs from './components/CrawlerDocs';
@@ -33,15 +30,7 @@ export default function App() {
   });
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [activeTab, setActiveTab] = useState<'jobs' | 'saved' | 'directory' | 'analytics' | 'pulse' | 'docs' | 'export'>('jobs');
-  const [savedJobIds, setSavedJobIds] = useState<string[]>([]);
-  
-  useEffect(() => {
-    const unsubscribe = subscribeToSavedJobs((ids) => {
-      setSavedJobIds(ids);
-    });
-    return () => unsubscribe();
-  }, []);
+  const [activeTab, setActiveTab] = useState<'jobs' | 'directory' | 'analytics' | 'pulse' | 'docs' | 'export'>('jobs');
   
   // Loading & Global States
   const [loading, setLoading] = useState(true);
@@ -265,11 +254,6 @@ export default function App() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <FirebaseAuthBar 
-              onViewBookmarks={() => setActiveTab('saved')} 
-              savedJobsCount={savedJobIds.length} 
-            />
-
             <button
               onClick={() => fetchAllData()}
               className="px-3.5 py-2.5 bg-white hover:bg-gray-100 text-gray-800 hover:text-gray-900 rounded-xl text-xs font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-gray-200 hover:border-gray-300 shadow-sm"
@@ -306,17 +290,6 @@ export default function App() {
           >
             <Layers className={`w-4 h-4 ${activeTab === 'jobs' ? 'text-indigo-600' : 'text-gray-500'}`} />
             Active Jobs
-          </button>
-          <button
-            onClick={() => setActiveTab('saved')}
-            className={`px-4 py-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 cursor-pointer shrink-0 ${
-              activeTab === 'saved'
-                ? 'border-indigo-500 text-indigo-600 font-bold bg-indigo-500/5 rounded-t-lg'
-                : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-t-lg'
-            }`}
-          >
-            <Bookmark className={`w-4 h-4 ${activeTab === 'saved' ? 'text-indigo-600' : 'text-gray-500'}`} />
-            Saved Bookmarks ({savedJobIds.length})
           </button>
           <button
             onClick={() => setActiveTab('directory')}
@@ -413,55 +386,6 @@ export default function App() {
                       onBulkScrape={handleBulkScrape}
                     />
                   </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'saved' && (
-                <motion.div
-                  key="saved-tab"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="space-y-6"
-                >
-                  <div className="bg-gradient-to-r from-indigo-900 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-sm">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 bg-indigo-500/20 text-indigo-300 rounded-xl border border-indigo-500/30">
-                        <Bookmark className="w-5 h-5" />
-                      </div>
-                      <h2 className="text-xl font-extrabold tracking-tight">Your Firebase Saved Jobs</h2>
-                    </div>
-                    <p className="text-xs text-indigo-200 max-w-2xl leading-relaxed">
-                      All job bookmarks saved while signed in are automatically synced across devices in your secure Firebase Firestore account.
-                    </p>
-                  </div>
-
-                  {savedJobIds.length > 0 ? (
-                    <JobsFeed 
-                      jobs={jobs.filter(j => savedJobIds.includes(j.id))} 
-                      onSelectJob={setSelectedJob} 
-                      companies={companies}
-                      bulkScraping={false}
-                      onBulkScrape={() => {}}
-                    />
-                  ) : (
-                    <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center max-w-xl mx-auto my-8 space-y-4">
-                      <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto border border-indigo-100">
-                        <Bookmark className="w-7 h-7" />
-                      </div>
-                      <h3 className="text-base font-extrabold text-gray-900">No Saved Bookmarks Yet</h3>
-                      <p className="text-xs text-gray-600 leading-relaxed">
-                        Sign in with Google in the header, click any active job listing, and press <span className="font-semibold text-indigo-600 font-mono">"Save Job to Account"</span> to store it directly in Firebase Firestore.
-                      </p>
-                      <button
-                        onClick={() => setActiveTab('jobs')}
-                        className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer inline-flex items-center gap-2"
-                      >
-                        Browse Active Jobs
-                      </button>
-                    </div>
-                  )}
                 </motion.div>
               )}
 
