@@ -5,6 +5,7 @@
 
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import vm from 'vm';
@@ -2137,6 +2138,14 @@ async function crawlCompanyCareerHub(initialUrl: string, companyName: string, he
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// Normalize URLs with leading double slashes (e.g. //api/cron/daily-digest -> /api/cron/daily-digest)
+app.use((req, res, next) => {
+  if (req.url.startsWith('//')) {
+    req.url = req.url.replace(/^\/+/, '/');
+  }
+  next();
+});
+
 // API: Get List of Companies
 app.get('/api/companies', (req, res) => {
   // Update job counts in companies list before returning
@@ -2594,6 +2603,144 @@ app.post('/api/scrape-bulk', async (req, res) => {
   })();
 });
 
+// -------------------------------------------------------------
+// Subscriber Management & Persistent Store (subscribers.json)
+// -------------------------------------------------------------
+interface Subscriber {
+  id: string;
+  email: string;
+  frequency: string;
+  categories: string[];
+  roles: string[];
+  subscribedAt: string;
+  active: boolean;
+}
+
+const SUBSCRIBERS_FILE = path.join(process.cwd(), 'subscribers.json');
+
+function loadSubscribers(): Subscriber[] {
+  try {
+    if (fs.existsSync(SUBSCRIBERS_FILE)) {
+      const data = fs.readFileSync(SUBSCRIBERS_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (err) {
+    console.error('Error reading subscribers file:', err);
+  }
+  return [];
+}
+
+let subscribersList: Subscriber[] = loadSubscribers();
+
+function saveSubscribers(): void {
+  try {
+    fs.writeFileSync(SUBSCRIBERS_FILE, JSON.stringify(subscribersList, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error writing subscribers file:', err);
+  }
+}
+
+// Helper: Build HTML email digest for cron newsletter
+function buildDigestHtmlForSubscriber(subscriberEmail: string, jobs: any[]) {
+  const topJobs = jobs.slice(0, 8);
+  const dateStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+  const jobCardsHtml = topJobs.map(job => `
+    <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <h3 style="margin: 0 0 6px 0; color: #111827; font-size: 16px; font-weight: 700;">${job.title || 'Software Engineer'}</h3>
+        <span style="background-color: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600;">${job.type || 'Full-time'}</span>
+      </div>
+      <p style="margin: 0 0 10px 0; color: #4b5563; font-size: 14px; font-weight: 600;">🏢 ${job.companyName} • 📍 ${job.location || 'Dhaka, Bangladesh'}</p>
+      ${job.summary ? `<p style="margin: 0 0 12px 0; color: #6b7280; font-size: 13px; line-height: 1.5;">${job.summary.substring(0, 160)}...</p>` : ''}
+      <a href="${job.link}" style="display: inline-block; background-color: #4f46e5; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 8px;">Apply Now →</a>
+    </div>
+  `).join('');
+
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"/></head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f3f4f6; margin: 0; padding: 24px;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        <div style="background-color: #4f46e5; padding: 28px; text-align: center; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">🚀 Daily BD Tech Job Digest</h1>
+          <p style="margin: 8px 0 0 0; opacity: 0.9; font-size: 14px;">${dateStr}</p>
+        </div>
+        <div style="padding: 24px;">
+          <p style="color: #374151; font-size: 15px; margin-top: 0;">Hi subscriber,</p>
+          <p style="color: #4b5563; font-size: 14px; line-height: 1.6;">Here are the top active tech job openings scanned across major tech companies in Bangladesh today:</p>
+          ${jobCardsHtml}
+          <div style="text-align: center; margin-top: 28px; padding-top: 20px; border-top: 1px solid #f3f4f6;">
+            <a href="https://techhub.bd/" style="color: #4f46e5; font-weight: 600; text-decoration: none; font-size: 14px;">View All Active Openings on BD Tech Hub →</a>
+          </div>
+        </div>
+        <div style="background-color: #f9fafb; padding: 16px; text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #f3f4f6;">
+          Sent with ❤️ by BD Tech Hub Scraper Automation. You received this because ${subscriberEmail} is subscribed to daily alerts.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// API Route: Save New Email Subscription
+app.post('/api/subscribe', (req, res) => {
+  try {
+    const { email, frequency = 'daily', categories = [], roles = [] } = req.body;
+
+    if (!email || typeof email !== 'string' || !email.includes('@')) {
+      return res.status(400).json({ error: 'Valid email address is required.' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingIndex = subscribersList.findIndex(s => s.email.toLowerCase() === normalizedEmail);
+
+    if (existingIndex !== -1) {
+      subscribersList[existingIndex].active = true;
+      subscribersList[existingIndex].frequency = frequency;
+      subscribersList[existingIndex].categories = categories;
+      subscribersList[existingIndex].roles = roles;
+    } else {
+      subscribersList.push({
+        id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        email: normalizedEmail,
+        frequency,
+        categories,
+        roles,
+        subscribedAt: new Date().toISOString(),
+        active: true
+      });
+    }
+
+    saveSubscribers();
+
+    console.log(`[Subscription System] Saved subscription for ${normalizedEmail}. Total active subscribers: ${subscribersList.filter(s => s.active).length}`);
+
+    return res.json({
+      success: true,
+      message: `Successfully subscribed ${normalizedEmail} to automated job alerts!`,
+      totalSubscribers: subscribersList.filter(s => s.active).length
+    });
+  } catch (err) {
+    console.error('Error saving subscription:', err);
+    return res.status(500).json({ error: 'Failed to process email subscription.' });
+  }
+});
+
+// API Route: Get Subscribers List & Stats
+app.get('/api/subscribers', (req, res) => {
+  const activeSubs = subscribersList.filter(s => s.active);
+  return res.json({
+    totalActive: activeSubs.length,
+    subscribers: activeSubs.map(s => ({
+      email: s.email,
+      subscribedAt: s.subscribedAt,
+      frequency: s.frequency
+    }))
+  });
+});
+
 // API Route: Send Manual Job Digest Email
 app.post('/api/send-job-digest', async (req, res) => {
   try {
@@ -2653,8 +2800,8 @@ app.post('/api/send-job-digest', async (req, res) => {
   }
 });
 
-// API Route: Automated Scheduled Cron Endpoint for Render / GitHub Actions
-app.post('/api/cron/daily-digest', async (req, res) => {
+// API Route: Automated Scheduled Cron Endpoint for Render / GitHub Actions (Accepts GET & POST)
+app.all(['/api/cron/daily-digest', '//api/cron/daily-digest'], async (req, res) => {
   try {
     const cronSecret = process.env.CRON_SECRET;
     const authHeader = req.headers.authorization;
@@ -2663,15 +2810,57 @@ app.post('/api/cron/daily-digest', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized cron access token.' });
     }
 
-    console.log('[Cron Worker] Automated morning trigger received. Starting background scraper scan...');
+    console.log('[Cron Worker] Automated trigger received. Scanning fresh jobs and queueing emails...');
     
-    // Scrape fresh listings
+    // Get fresh jobs
     const activeJobs = jobsCache.length > 0 ? jobsCache : SEED_JOBS;
+    const activeSubscribers = subscribersList.filter(s => s.active);
+    const apiKey = process.env.RESEND_API_KEY;
+
+    const dispatchResults: Array<{ email: string; success: boolean; error?: string }> = [];
+
+    if (apiKey && activeSubscribers.length > 0) {
+      console.log(`[Cron Newsletter] Dispatching automated daily digest to ${activeSubscribers.length} subscribers...`);
+      for (const sub of activeSubscribers) {
+        try {
+          const emailHtml = buildDigestHtmlForSubscriber(sub.email, activeJobs);
+          const resendResp = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              from: 'BD Tech Hub <onboarding@resend.dev>',
+              to: [sub.email],
+              subject: `Daily BD Tech Job Digest (${activeJobs.length} Positions Open)`,
+              html: emailHtml
+            })
+          });
+
+          if (resendResp.ok) {
+            dispatchResults.push({ email: sub.email, success: true });
+            console.log(`[Cron Newsletter] Delivered daily digest to ${sub.email}`);
+          } else {
+            const errText = await resendResp.text();
+            dispatchResults.push({ email: sub.email, success: false, error: errText });
+            console.error(`[Cron Newsletter] Failed sending to ${sub.email}:`, errText);
+          }
+        } catch (err: any) {
+          dispatchResults.push({ email: sub.email, success: false, error: err.message });
+        }
+      }
+    } else {
+      console.log(`[Cron Worker] Automated run completed. Subscribers count: ${activeSubscribers.length}, Resend API status: ${apiKey ? 'Configured' : 'Missing RESEND_API_KEY'}`);
+    }
 
     return res.json({
       success: true,
       timestamp: new Date().toISOString(),
       activeJobsCount: activeJobs.length,
+      totalSubscribers: activeSubscribers.length,
+      emailsSent: dispatchResults.filter(r => r.success).length,
+      dispatchResults,
       message: 'Scraper scan and subscriber digest queue executed successfully.'
     });
   } catch (err) {

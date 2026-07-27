@@ -14,6 +14,11 @@ jobs:
       - name: Ping Render / App Service Endpoint
         run: |
           echo "Waking up scraper and triggering daily email digest..."
-          curl -X POST "${{ secrets.RENDER_APP_URL || 'https://real-time-job-aggregator-dashboard-bd.onrender.com/' }}/api/cron/daily-digest" \
+          RAW_URL="${{ secrets.RENDER_APP_URL || 'https://your-app.onrender.com' }}"
+          # Remove any trailing slash to prevent double slashes in path
+          CLEAN_URL="${RAW_URL%/}"
+          
+          echo "Sending POST request to: ${CLEAN_URL}/api/cron/daily-digest"
+          curl -X POST "${CLEAN_URL}/api/cron/daily-digest" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET || 'default_secret_token' }}" \
             -H "Content-Type: application/json"

@@ -145,14 +145,35 @@ export function EmailDigestSection({ jobs, initialCategory = 'all' }: EmailDiges
     }
   };
 
-  const handleSaveSubscription = (e: React.FormEvent) => {
+  const handleSaveSubscription = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subEmail || !subEmail.includes('@')) {
       alert('Please enter a valid subscriber email address.');
       return;
     }
-    setSubSaved(true);
-    setTimeout(() => setSubSaved(false), 5000);
+
+    try {
+      const resp = await fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: subEmail,
+          frequency: subFrequency,
+          categories: [selectedCategory],
+          scheduleTime: subScheduleTime
+        })
+      });
+
+      const data = await resp.json();
+      if (resp.ok && data.success) {
+        setSubSaved(true);
+        setTimeout(() => setSubSaved(false), 6000);
+      } else {
+        alert(data.error || 'Failed to save subscription.');
+      }
+    } catch (err) {
+      alert('Network error registering subscription.');
+    }
   };
 
   const copyEmailHtml = () => {
